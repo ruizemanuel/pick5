@@ -6,7 +6,7 @@ export const config: VercelConfig = {
   installCommand: "pnpm install --frozen-lockfile",
   rootDirectory: "app",
   crons: [
-    // Coach AI: publish picks before each MW (Wed 12:00 UTC)
+    // Coach AI: publish picks before each MW (Thu 12:00 UTC, May 14 and May 21 2026)
     { path: "/api/coach/publish-picks?mw=37", schedule: "0 12 14 5 *" },
     { path: "/api/coach/publish-picks?mw=38", schedule: "0 12 21 5 *" },
     // Coach AI: reveal + reputation update after each MW
@@ -16,7 +16,7 @@ export const config: VercelConfig = {
     { path: "/api/oracle/finalize-mw?mw=38", schedule: "0 22 24 5 *" },
     // Retry oracle hourly through deadline
     { path: "/api/oracle/retry?mw=38", schedule: "0 * 24-25 5 *" },
-    // Leaderboard cache recompute (post MW37, then daily)
+    // Leaderboard cache recompute (hourly during the tournament window)
     { path: "/api/leaderboard/recompute", schedule: "0 * * * *" },
   ],
 };
