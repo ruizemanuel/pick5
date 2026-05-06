@@ -1,0 +1,27 @@
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+.vercel/
+.turbo/
+out/
+dist/
+*.log
+.DS_Store
+
+# planning artifacts — NEVER commit
+docs/
+
+# tooling caches
+.playwright-mcp/
+.claude/
+
+# hardhat
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+contracts/coverage/
+
+# drizzle
+app/drizzle/meta/
