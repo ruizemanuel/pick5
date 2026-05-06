@@ -361,3 +361,49 @@ describe("Pick5Pool — finalize + claim + withdraw", () => {
       .to.be.revertedWithCustomError(pool, "NotJoined");
   });
 });
+
+describe("Pick5Pool — emergencyAdminWithdraw", () => {
+  it("admin recovers seed if no participants joined and 7 days passed", async () => {
+    const { admin, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 7 * 86400 + 1]);
+    await ethers.provider.send("evm_mine", []);
+
+    const before = await usdt.balanceOf(admin.address);
+    await pool.connect(admin).emergencyAdminWithdraw();
+    const after = await usdt.balanceOf(admin.address);
+    expect(after - before).to.equal(10_000_000n);
+  });
+
+  it("rejects if participants > 0", async () => {
+    const { admin, alice, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 7 * 86400 + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(pool.connect(admin).emergencyAdminWithdraw())
+      .to.be.revertedWithCustomError(pool, "HasParticipants");
+  });
+
+  it("rejects before endTime + 7 days", async () => {
+    const { admin, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 86400]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(pool.connect(admin).emergencyAdminWithdraw())
+      .to.be.revertedWithCustomError(pool, "TooEarly");
+  });
+
+  it("rejects unauthorized caller", async () => {
+    const { alice, pool, endTime } = await deployFixture();
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 7 * 86400 + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(pool.connect(alice).emergencyAdminWithdraw())
+      .to.be.revertedWithCustomError(pool, "OwnableUnauthorizedAccount");
+  });
+});

@@ -199,6 +199,22 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         emit PrizeClaimed(winner, prizeAmount);
     }
 
+    event EmergencyWithdraw(address indexed admin, uint256 amount);
+    error HasParticipants();
+    error TooEarly();
+
+    function emergencyAdminWithdraw() external onlyOwner nonReentrant {
+        if (block.timestamp < endTime + 7 days) revert TooEarly();
+        if (participants.length > 0) revert HasParticipants();
+        uint256 aBal = aUsdt.balanceOf(address(this));
+        if (aBal > 0) {
+            aavePool.withdraw(address(usdt), aBal, address(this));
+        }
+        uint256 bal = usdt.balanceOf(address(this));
+        usdt.safeTransfer(owner(), bal);
+        emit EmergencyWithdraw(owner(), bal);
+    }
+
     function getLineup(address user) external view returns (uint16[5] memory) {
         return _lineups[user];
     }
