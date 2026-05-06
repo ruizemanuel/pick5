@@ -96,6 +96,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     error TournamentNotEnded();
     error AlreadySubmitted();
     error LengthMismatch();
+    error NoParticipants();
 
     function submitScores(
         address[] calldata users,
@@ -107,6 +108,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         if (scoresSubmitted) revert AlreadySubmitted();
         if (users.length != points.length) revert LengthMismatch();
         if (users.length != participants.length) revert LengthMismatch();
+        if (users.length == 0) revert NoParticipants();
 
         uint128 maxScore;
         uint256 tieCount;

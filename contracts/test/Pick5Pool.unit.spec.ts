@@ -172,6 +172,15 @@ describe("Pick5Pool — submitScores", () => {
     ).to.be.revertedWithCustomError(pool, "TournamentNotEnded");
   });
 
+  it("rejects zero participants", async () => {
+    const { oracle, pool, endTime } = await deployFixture();
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(
+      pool.connect(oracle).submitScores([], [], "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(pool, "NoParticipants");
+  });
+
   it("rejects mismatched array lengths", async () => {
     const { oracle, alice, usdt, pool, endTime } = await deployFixture();
     await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
