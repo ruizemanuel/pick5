@@ -14,7 +14,7 @@ export const coachPicks = pgTable(
     id: serial("id").primaryKey(),
     mw: integer("mw").notNull(),
     playerIds: integer("player_ids").array().notNull(),
-    reasoning: jsonb("reasoning").notNull(),
+    reasoning: jsonb("reasoning").$type<string[]>().notNull(),
     commitmentHash: text("commitment_hash").notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     publishTxHash: text("publish_tx_hash"),
