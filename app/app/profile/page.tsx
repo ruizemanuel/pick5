@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { WalletButton } from "@/components/WalletButton";
 import { pick5PoolAbi } from "@/lib/contracts/abi";
+import { posthog } from "@/lib/posthog";
 import { ADDRESSES, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
 
 export default function ProfilePage() {
@@ -68,6 +69,7 @@ export default function ProfilePage() {
         functionName: "claimPrize",
       });
       toast.success("Prize claimed!");
+      posthog.capture("prize_claimed");
       claimed.refetch();
     } catch (e) {
       console.error(e);
@@ -83,6 +85,7 @@ export default function ProfilePage() {
         functionName: "withdrawDeposit",
       });
       toast.success("Deposit withdrawn");
+      posthog.capture("withdraw_completed", { amount_usdt: 5 });
       withdrawn.refetch();
     } catch (e) {
       console.error(e);

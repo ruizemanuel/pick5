@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useLineupDraft } from "@/stores/lineupDraft";
 import { usePool } from "@/hooks/usePool";
+import { posthog } from "@/lib/posthog";
 
 export default function ConfirmPage() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function ConfirmPage() {
     try {
       await pool.approve();
       toast.success("USDT approved");
+      posthog.capture("usdt_approved", { amount_usdt: 5 });
       await pool.refetchAllowance();
       setStep("join");
     } catch (e) {
@@ -57,6 +59,7 @@ export default function ConfirmPage() {
       const tuple = completed as unknown as readonly [number, number, number, number, number];
       await pool.join(tuple);
       toast.success("You're in 🎉");
+      posthog.capture("deposit_completed", { amount_usdt: 5 });
       clear();
       router.push("/play" as Route);
     } catch (e) {
