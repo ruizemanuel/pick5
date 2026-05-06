@@ -133,3 +133,79 @@ describe("Pick5Pool — joinTournament", () => {
       .to.be.revertedWithCustomError(pool, "InvalidLineup");
   });
 });
+
+describe("Pick5Pool — submitScores", () => {
+  it("oracle submits scores, identifies winner, sets state", async () => {
+    const { oracle, alice, bob, usdt, pool, lockTime, endTime } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await usdt.connect(bob).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await pool.connect(bob).joinTournament([6, 7, 8, 9, 10]);
+
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+
+    const seed = "0x" + "ab".repeat(32);
+    await expect(pool.connect(oracle).submitScores([alice.address, bob.address], [42, 100], seed))
+      .to.emit(pool, "ScoresSubmitted")
+      .withArgs(bob.address, 100);
+
+    expect(await pool.scoresSubmitted()).to.equal(true);
+    expect(await pool.winner()).to.equal(bob.address);
+    expect(await pool.scores(alice.address)).to.equal(42n);
+    expect(await pool.scores(bob.address)).to.equal(100n);
+  });
+
+  it("rejects non-oracle caller", async () => {
+    const { alice, pool, endTime } = await deployFixture();
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(
+      pool.connect(alice).submitScores([alice.address], [1], "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(pool, "NotOracle");
+  });
+
+  it("rejects before endTime", async () => {
+    const { oracle, pool } = await deployFixture();
+    await expect(
+      pool.connect(oracle).submitScores([], [], "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(pool, "TournamentNotEnded");
+  });
+
+  it("rejects mismatched array lengths", async () => {
+    const { oracle, alice, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(
+      pool.connect(oracle).submitScores([alice.address], [1, 2], "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(pool, "LengthMismatch");
+  });
+
+  it("rejects mismatch with participants count", async () => {
+    const { oracle, alice, bob, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await usdt.connect(bob).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await pool.connect(bob).joinTournament([6, 7, 8, 9, 10]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await expect(
+      pool.connect(oracle).submitScores([alice.address], [42], "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(pool, "LengthMismatch");
+  });
+
+  it("rejects double-submit", async () => {
+    const { oracle, alice, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    const seed = "0x" + "cd".repeat(32);
+    await pool.connect(oracle).submitScores([alice.address], [42], seed);
+    await expect(
+      pool.connect(oracle).submitScores([alice.address], [42], seed)
+    ).to.be.revertedWithCustomError(pool, "AlreadySubmitted");
+  });
+});

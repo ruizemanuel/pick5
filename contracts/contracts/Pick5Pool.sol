@@ -84,6 +84,67 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         emit Joined(msg.sender, lineup, idx);
     }
 
+    mapping(address => uint128) public scores;
+    bool    public scoresSubmitted;
+    address public winner;
+    uint128 public winningScore;
+
+    event ScoresSubmitted(address indexed winner, uint128 winningScore);
+    event TieBreak(address[] tied, address winner, uint256 seed);
+
+    error NotOracle();
+    error TournamentNotEnded();
+    error AlreadySubmitted();
+    error LengthMismatch();
+
+    function submitScores(
+        address[] calldata users,
+        uint128[]  calldata points,
+        uint256    randomSeed
+    ) external {
+        if (msg.sender != oracle) revert NotOracle();
+        if (block.timestamp < endTime) revert TournamentNotEnded();
+        if (scoresSubmitted) revert AlreadySubmitted();
+        if (users.length != points.length) revert LengthMismatch();
+        if (users.length != participants.length) revert LengthMismatch();
+
+        uint128 maxScore;
+        uint256 tieCount;
+        for (uint256 i = 0; i < users.length; i++) {
+            scores[users[i]] = points[i];
+            if (points[i] > maxScore) {
+                maxScore = points[i];
+                tieCount = 1;
+            } else if (points[i] == maxScore) {
+                tieCount++;
+            }
+        }
+
+        address[] memory tied = new address[](tieCount);
+        uint256 ti;
+        for (uint256 i = 0; i < users.length; i++) {
+            if (points[i] == maxScore) {
+                tied[ti++] = users[i];
+            }
+        }
+
+        address w;
+        if (tied.length == 1) {
+            w = tied[0];
+        } else {
+            uint256 idx = uint256(keccak256(abi.encode(
+                randomSeed, blockhash(block.number - 1), tied.length
+            ))) % tied.length;
+            w = tied[idx];
+            emit TieBreak(tied, w, randomSeed);
+        }
+
+        winner = w;
+        winningScore = maxScore;
+        scoresSubmitted = true;
+        emit ScoresSubmitted(w, maxScore);
+    }
+
     function getLineup(address user) external view returns (uint16[5] memory) {
         return _lineups[user];
     }
