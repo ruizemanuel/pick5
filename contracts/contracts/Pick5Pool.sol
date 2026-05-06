@@ -147,6 +147,58 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         emit ScoresSubmitted(w, maxScore);
     }
 
+    bool    public finalized;
+    uint128 public prizeAmount;
+    mapping(address => bool) public depositWithdrawn;
+    bool    public prizeClaimed;
+
+    event Finalized(uint256 prizeAmount, uint256 yieldEarned);
+    event DepositWithdrawn(address indexed user, uint256 amount);
+    event PrizeClaimed(address indexed winner, uint256 amount);
+
+    error ScoresNotSubmitted();
+    error AlreadyFinalized();
+    error AlreadyWithdrawn();
+    error AlreadyClaimed();
+    error NotWinner();
+    error NotJoined();
+
+    function finalizeAndDistribute() external nonReentrant {
+        if (!scoresSubmitted) revert ScoresNotSubmitted();
+        if (finalized) revert AlreadyFinalized();
+
+        finalized = true;
+
+        uint256 aBal = aUsdt.balanceOf(address(this));
+        aavePool.withdraw(address(usdt), aBal, address(this));
+
+        uint256 totalDeposits = DEPOSIT * participants.length;
+        uint256 contractBal = usdt.balanceOf(address(this));
+        uint256 prize = contractBal - totalDeposits;
+
+        prizeAmount = uint128(prize);
+        uint256 yieldEarned = prize > seedAmount ? prize - seedAmount : 0;
+        emit Finalized(prize, yieldEarned);
+    }
+
+    function withdrawDeposit() external nonReentrant {
+        if (!finalized) revert ScoresNotSubmitted();
+        if (!hasJoined[msg.sender]) revert NotJoined();
+        if (depositWithdrawn[msg.sender]) revert AlreadyWithdrawn();
+        depositWithdrawn[msg.sender] = true;
+        usdt.safeTransfer(msg.sender, DEPOSIT);
+        emit DepositWithdrawn(msg.sender, DEPOSIT);
+    }
+
+    function claimPrize() external nonReentrant {
+        if (!finalized) revert ScoresNotSubmitted();
+        if (msg.sender != winner) revert NotWinner();
+        if (prizeClaimed) revert AlreadyClaimed();
+        prizeClaimed = true;
+        usdt.safeTransfer(winner, prizeAmount);
+        emit PrizeClaimed(winner, prizeAmount);
+    }
+
     function getLineup(address user) external view returns (uint16[5] memory) {
         return _lineups[user];
     }

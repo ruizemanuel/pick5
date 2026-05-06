@@ -218,3 +218,146 @@ describe("Pick5Pool — submitScores", () => {
     ).to.be.revertedWithCustomError(pool, "AlreadySubmitted");
   });
 });
+
+describe("Pick5Pool — finalize + claim + withdraw", () => {
+  it("full happy path: 2 users, winner takes yield + seed, both withdraw deposit", async () => {
+    const { admin, oracle, alice, bob, usdt, aave, aUsdt, pool, endTime } = await deployFixture();
+
+    // seed
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+
+    // alice + bob join
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await usdt.connect(bob).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await pool.connect(bob).joinTournament([6, 7, 8, 9, 10]);
+
+    // simulate yield: mint extra aUSDT to pool + backing USDT to MockAavePool
+    await aUsdt.mint(await pool.getAddress(), 1_000_000n); // $1 yield (aUSDT)
+    await usdt.mint(await aave.getAddress(), 1_000_000n);  // backing USDT for the yield
+
+    // submit scores after endTime
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await pool.connect(oracle).submitScores(
+      [alice.address, bob.address],
+      [42, 100],
+      "0x" + "ab".repeat(32)
+    );
+
+    // finalize (anyone)
+    await expect(pool.connect(alice).finalizeAndDistribute())
+      .to.emit(pool, "Finalized");
+
+    // total deposits = 10 (seed) + 5 (alice) + 5 (bob) = 20 USDT
+    // total redeemed (with yield) = 21 USDT
+    // prizeAmount = 21 - 5 - 5 = 11 USDT (seed + yield go to winner)
+    expect(await pool.prizeAmount()).to.equal(11_000_000n);
+
+    // bob (winner) claims
+    const bobBefore = await usdt.balanceOf(bob.address);
+    await pool.connect(bob).claimPrize();
+    expect((await usdt.balanceOf(bob.address)) - bobBefore).to.equal(11_000_000n);
+
+    // alice withdraws deposit
+    const aliceBefore = await usdt.balanceOf(alice.address);
+    await pool.connect(alice).withdrawDeposit();
+    expect((await usdt.balanceOf(alice.address)) - aliceBefore).to.equal(5_000_000n);
+
+    // bob also withdraws deposit
+    const bobBefore2 = await usdt.balanceOf(bob.address);
+    await pool.connect(bob).withdrawDeposit();
+    expect((await usdt.balanceOf(bob.address)) - bobBefore2).to.equal(5_000_000n);
+  });
+
+  it("non-winner cannot claim", async () => {
+    const { admin, oracle, alice, bob, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await usdt.connect(bob).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await pool.connect(bob).joinTournament([6, 7, 8, 9, 10]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await pool.connect(oracle).submitScores(
+      [alice.address, bob.address], [42, 100], "0x" + "ab".repeat(32)
+    );
+    await pool.connect(alice).finalizeAndDistribute();
+    await expect(pool.connect(alice).claimPrize())
+      .to.be.revertedWithCustomError(pool, "NotWinner");
+  });
+
+  it("cannot withdraw twice", async () => {
+    const { admin, oracle, alice, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await pool.connect(oracle).submitScores([alice.address], [42], "0x" + "ab".repeat(32));
+    await pool.connect(alice).finalizeAndDistribute();
+    await pool.connect(alice).withdrawDeposit();
+    await expect(pool.connect(alice).withdrawDeposit())
+      .to.be.revertedWithCustomError(pool, "AlreadyWithdrawn");
+  });
+
+  it("cannot claim twice", async () => {
+    const { admin, oracle, alice, bob, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await usdt.connect(bob).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await pool.connect(bob).joinTournament([6, 7, 8, 9, 10]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await pool.connect(oracle).submitScores(
+      [alice.address, bob.address], [42, 100], "0x" + "ab".repeat(32)
+    );
+    await pool.connect(alice).finalizeAndDistribute();
+    await pool.connect(bob).claimPrize();
+    await expect(pool.connect(bob).claimPrize())
+      .to.be.revertedWithCustomError(pool, "AlreadyClaimed");
+  });
+
+  it("cannot finalize twice", async () => {
+    const { admin, oracle, alice, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await pool.connect(oracle).submitScores([alice.address], [42], "0x" + "ab".repeat(32));
+    await pool.connect(alice).finalizeAndDistribute();
+    await expect(pool.connect(alice).finalizeAndDistribute())
+      .to.be.revertedWithCustomError(pool, "AlreadyFinalized");
+  });
+
+  it("cannot withdraw before scores submitted", async () => {
+    const { admin, alice, usdt, pool } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await expect(pool.connect(alice).withdrawDeposit())
+      .to.be.revertedWithCustomError(pool, "ScoresNotSubmitted");
+  });
+
+  it("non-participant cannot withdraw", async () => {
+    const { admin, oracle, alice, bob, usdt, pool, endTime } = await deployFixture();
+    await usdt.connect(admin).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(admin).seedPool(10_000_000n);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await ethers.provider.send("evm_setNextBlockTimestamp", [endTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await pool.connect(oracle).submitScores([alice.address], [42], "0x" + "ab".repeat(32));
+    await pool.connect(alice).finalizeAndDistribute();
+    await expect(pool.connect(bob).withdrawDeposit())
+      .to.be.revertedWithCustomError(pool, "NotJoined");
+  });
+});
