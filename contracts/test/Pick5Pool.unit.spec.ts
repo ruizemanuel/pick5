@@ -27,3 +27,103 @@ describe("Pick5Pool — constructor + immutables", () => {
     expect(await pool.DEPOSIT()).to.equal(5_000_000n);
   });
 });
+
+async function deployFixture() {
+  const [admin, oracle, alice, bob] = await ethers.getSigners();
+  const Usdt = await ethers.getContractFactory("MockUSDT");
+  const usdt = await Usdt.deploy();
+  const AUsdt = await ethers.getContractFactory("MockAUsdt");
+  const aUsdt = await AUsdt.deploy();
+  const Aave = await ethers.getContractFactory("MockAavePool");
+  const aave = await Aave.deploy(await usdt.getAddress(), await aUsdt.getAddress());
+
+  const now = (await ethers.provider.getBlock("latest"))!.timestamp;
+  const lockTime = now + 1000;
+  const endTime = lockTime + 100_000;
+
+  const Pool = await ethers.getContractFactory("Pick5Pool");
+  const pool = await Pool.deploy(
+    oracle.address,
+    await usdt.getAddress(),
+    await aave.getAddress(),
+    await aUsdt.getAddress(),
+    lockTime,
+    endTime
+  );
+
+  await usdt.mint(admin.address, 100_000_000n);
+  await usdt.mint(alice.address, 50_000_000n);
+  await usdt.mint(bob.address, 50_000_000n);
+
+  return { admin, oracle, alice, bob, usdt, aave, aUsdt, pool, lockTime, endTime };
+}
+
+describe("Pick5Pool — seedPool", () => {
+  it("admin seeds pool, USDT goes to Aave, aUSDT goes to contract", async () => {
+    const { admin, usdt, pool, aave, aUsdt } = await deployFixture();
+    const seed = 10_000_000n;
+    await usdt.connect(admin).approve(await pool.getAddress(), seed);
+    await pool.connect(admin).seedPool(seed);
+    expect(await pool.seedAmount()).to.equal(seed);
+    expect(await aUsdt.balanceOf(await pool.getAddress())).to.equal(seed);
+    expect(await usdt.balanceOf(await aave.getAddress())).to.equal(seed);
+  });
+
+  it("only owner can seed", async () => {
+    const { alice, usdt, pool } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 10_000_000n);
+    await expect(pool.connect(alice).seedPool(10_000_000n))
+      .to.be.revertedWithCustomError(pool, "OwnableUnauthorizedAccount");
+  });
+});
+
+describe("Pick5Pool — joinTournament", () => {
+  it("user joins, deposit pulled, lineup stored, participant indexed", async () => {
+    const { alice, usdt, pool, aUsdt } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    const lineup: [number, number, number, number, number] = [1, 2, 3, 4, 5];
+
+    await expect(pool.connect(alice).joinTournament(lineup))
+      .to.emit(pool, "Joined")
+      .withArgs(alice.address, lineup, 0);
+
+    expect(await pool.hasJoined(alice.address)).to.equal(true);
+    expect(await aUsdt.balanceOf(await pool.getAddress())).to.equal(5_000_000n);
+    const stored = await pool.getLineup(alice.address);
+    expect(stored.map((x) => Number(x))).to.deep.equal(lineup);
+    expect(await pool.participantsLength()).to.equal(1n);
+  });
+
+  it("rejects double-join", async () => {
+    const { alice, usdt, pool } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 10_000_000n);
+    await pool.connect(alice).joinTournament([1, 2, 3, 4, 5]);
+    await expect(pool.connect(alice).joinTournament([6, 7, 8, 9, 10]))
+      .to.be.revertedWithCustomError(pool, "AlreadyJoined");
+  });
+
+  it("rejects after lockTime", async () => {
+    const { alice, usdt, pool, lockTime } = await deployFixture();
+    await ethers.provider.send("evm_setNextBlockTimestamp", [lockTime + 1]);
+    await ethers.provider.send("evm_mine", []);
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await expect(pool.connect(alice).joinTournament([1, 2, 3, 4, 5]))
+      .to.be.revertedWithCustomError(pool, "TournamentLocked");
+  });
+
+  it("rejects duplicate player IDs in lineup", async () => {
+    const { alice, usdt, pool } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await expect(pool.connect(alice).joinTournament([1, 2, 3, 3, 5]))
+      .to.be.revertedWithCustomError(pool, "InvalidLineup");
+  });
+
+  it("rejects player ID 0 or > 999", async () => {
+    const { alice, usdt, pool } = await deployFixture();
+    await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    await expect(pool.connect(alice).joinTournament([0, 2, 3, 4, 5]))
+      .to.be.revertedWithCustomError(pool, "InvalidLineup");
+    await expect(pool.connect(alice).joinTournament([1000, 2, 3, 4, 5]))
+      .to.be.revertedWithCustomError(pool, "InvalidLineup");
+  });
+});
