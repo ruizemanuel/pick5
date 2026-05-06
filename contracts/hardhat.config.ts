@@ -33,6 +33,11 @@ const config: HardhatUserConfig = {
       accounts: [PRIVATE_KEY],
       chainId: 42220,
     },
+    "celo-sepolia": {
+      url: "https://forno.celo-sepolia.celo-testnet.org",
+      accounts: [PRIVATE_KEY],
+      chainId: 11142220,
+    },
   },
   etherscan: {
     apiKey: { celo: CELOSCAN_API_KEY, alfajores: CELOSCAN_API_KEY },
