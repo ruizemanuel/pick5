@@ -75,6 +75,12 @@ describe("Pick5Pool — seedPool", () => {
     await expect(pool.connect(alice).seedPool(10_000_000n))
       .to.be.revertedWithCustomError(pool, "OwnableUnauthorizedAccount");
   });
+
+  it("rejects seedPool(0)", async () => {
+    const { admin, pool } = await deployFixture();
+    await expect(pool.connect(admin).seedPool(0))
+      .to.be.revertedWithCustomError(pool, "ZeroAmount");
+  });
 });
 
 describe("Pick5Pool — joinTournament", () => {

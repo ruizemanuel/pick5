@@ -37,6 +37,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     error AlreadyJoined();
     error TournamentLocked();
     error InvalidLineup();
+    error ZeroAmount();
 
     constructor(
         address _oracle,
@@ -57,6 +58,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     }
 
     function seedPool(uint256 amount) external onlyOwner nonReentrant {
+        if (amount == 0) revert ZeroAmount();
         if (seedAmount > 0) revert AlreadySeeded();
         seedAmount = amount;
         usdt.safeTransferFrom(msg.sender, address(this), amount);
