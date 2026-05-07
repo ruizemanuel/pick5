@@ -3,6 +3,8 @@ import { getBootstrap } from "@/lib/fpl/client";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
+// Don't prerender at build time — FPL blocks Vercel's build IPs with 403.
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const data = await getBootstrap();

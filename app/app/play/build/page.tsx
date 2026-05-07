@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PitchView } from "@/components/pitch/PitchView";
+import { WalletButton } from "@/components/WalletButton";
 import { useLineupDraft } from "@/stores/lineupDraft";
 
 export default function BuildPage() {
@@ -21,9 +22,12 @@ export default function BuildPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 p-4 pb-24">
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Build your lineup</h1>
-        <span className="text-sm text-muted-foreground">{filled} / 5</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{filled} / 5</span>
+          <WalletButton />
+        </div>
       </header>
 
       <PitchView />

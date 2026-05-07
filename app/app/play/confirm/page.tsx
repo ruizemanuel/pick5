@@ -8,6 +8,7 @@ import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { WalletButton } from "@/components/WalletButton";
 import { useLineupDraft } from "@/stores/lineupDraft";
 import { usePool } from "@/hooks/usePool";
 import { posthog } from "@/lib/posthog";
@@ -30,7 +31,8 @@ export default function ConfirmPage() {
   if (!isConnected) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 p-6">
-        <p>Connect your wallet to continue.</p>
+        <p className="text-center">Connect your wallet to continue.</p>
+        <WalletButton />
         <Link href={"/" as Route} className="text-sm underline">
           Back to home
         </Link>

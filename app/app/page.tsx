@@ -3,11 +3,15 @@ import type { Route } from "next";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { IconShield, IconCoin, IconTrophy } from "@tabler/icons-react";
+import { WalletButton } from "@/components/WalletButton";
 
 export default function LandingPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-10 p-6">
-      <header className="pt-12 text-center">
+      <div className="flex justify-end pt-4">
+        <WalletButton />
+      </div>
+      <header className="pt-2 text-center">
         <h1 className="text-4xl font-bold tracking-tight">Pick5</h1>
         <p className="mt-2 text-muted-foreground">No-loss fantasy on Celo</p>
       </header>
