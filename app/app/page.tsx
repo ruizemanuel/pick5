@@ -24,20 +24,20 @@ const PREVIEW_LINEUP: PitchSlot[] = [
     teamColor: "#EF0107",
   },
   {
-    photoUrl: FPL_PHOTO(178186),
-    initials: "JB",
-    name: "Bowen",
-    team: "WHU",
-    position: "FWD",
-    teamColor: "#7A263A",
-  },
-  {
     photoUrl: FPL_PHOTO(244851),
     initials: "CP",
     name: "Palmer",
     team: "CHE",
     position: "MID",
     teamColor: "#034694",
+  },
+  {
+    photoUrl: FPL_PHOTO(221820),
+    initials: "LM",
+    name: "Martinez",
+    team: "MUN",
+    position: "DEF",
+    teamColor: "#DA291C",
   },
   {
     photoUrl: FPL_PHOTO(462424),
