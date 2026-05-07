@@ -16,6 +16,10 @@ async function main() {
   const network = await ethers.provider.getNetwork();
   const isCelo = network.chainId === 42220n;
   const isAlfa = network.chainId === 44787n;
+  const isSepolia = network.chainId === 11142220n;
+  const isTestnet = isAlfa || isSepolia;
+  const testnetName = isAlfa ? "Alfajores" : isSepolia ? "Celo Sepolia" : "";
+  const testnetSuffix = isAlfa ? "ALFAJORES" : isSepolia ? "SEPOLIA" : "";
 
   console.log("Deployer:", deployer.address);
   console.log("Network:", network.name, network.chainId.toString());
@@ -28,8 +32,8 @@ async function main() {
 
   let usdt: string, aavePool: string, aUsdt: string;
 
-  if (isAlfa) {
-    console.log("\n[Alfajores] Deploying mocks first...");
+  if (isTestnet) {
+    console.log(`\n[${testnetName}] Deploying mocks first...`);
     const Mock = await ethers.getContractFactory("MockUSDT");
     const mockUsdt = await Mock.deploy();
     await mockUsdt.waitForDeployment();
@@ -80,14 +84,16 @@ async function main() {
   console.log("CoachAgent:", coachAddrDeployed);
 
   console.log("\n=== Deployment summary ===");
-  console.log(`NEXT_PUBLIC_PICK5_POOL_${isCelo ? "CELO" : "ALFAJORES"}=${poolAddr}`);
-  console.log(`NEXT_PUBLIC_COACH_AGENT_${isCelo ? "CELO" : "ALFAJORES"}=${coachAddrDeployed}`);
-  if (isAlfa) {
-    console.log(`NEXT_PUBLIC_USDT_ALFAJORES=${usdt}`);
+  const suffix = isCelo ? "CELO" : testnetSuffix;
+  console.log(`NEXT_PUBLIC_PICK5_POOL_${suffix}=${poolAddr}`);
+  console.log(`NEXT_PUBLIC_COACH_AGENT_${suffix}=${coachAddrDeployed}`);
+  if (isTestnet) {
+    console.log(`NEXT_PUBLIC_USDT_${testnetSuffix}=${usdt}`);
   }
+  const verifyNet = isCelo ? "celo" : isAlfa ? "alfajores" : "celo-sepolia";
   console.log("\nNext steps:");
-  console.log(`  npx hardhat verify --network ${isCelo ? "celo" : "alfajores"} ${poolAddr} ${oracleAddr} ${usdt} ${aavePool} ${aUsdt} ${lockTime} ${endTime}`);
-  console.log(`  npx hardhat verify --network ${isCelo ? "celo" : "alfajores"} ${coachAddrDeployed} ${coachAddr}`);
+  console.log(`  npx hardhat verify --network ${verifyNet} ${poolAddr} ${oracleAddr} ${usdt} ${aavePool} ${aUsdt} ${lockTime} ${endTime}`);
+  console.log(`  npx hardhat verify --network ${verifyNet} ${coachAddrDeployed} ${coachAddr}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

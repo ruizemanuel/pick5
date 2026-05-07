@@ -7,6 +7,7 @@
     "test": "hardhat test",
     "coverage": "hardhat coverage",
     "deploy:alfajores": "hardhat run scripts/deploy.ts --network alfajores",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network celo-sepolia",
     "deploy:celo": "hardhat run scripts/deploy.ts --network celo",
     "verify": "hardhat verify",
     "lint": "echo 'no-op'",

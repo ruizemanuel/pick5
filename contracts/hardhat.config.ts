@@ -40,7 +40,11 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: { celo: CELOSCAN_API_KEY, alfajores: CELOSCAN_API_KEY },
+    apiKey: {
+      celo: CELOSCAN_API_KEY,
+      alfajores: CELOSCAN_API_KEY,
+      "celo-sepolia": CELOSCAN_API_KEY,
+    },
     customChains: [
       {
         network: "celo",
@@ -51,6 +55,11 @@ const config: HardhatUserConfig = {
         network: "alfajores",
         chainId: 44787,
         urls: { apiURL: "https://api-alfajores.celoscan.io/api", browserURL: "https://alfajores.celoscan.io" },
+      },
+      {
+        network: "celo-sepolia",
+        chainId: 11142220,
+        urls: { apiURL: "https://api-sepolia.celoscan.io/api", browserURL: "https://celo-sepolia.blockscout.com" },
       },
     ],
   },
