@@ -12,6 +12,10 @@ dist/
 
 # planning artifacts — NEVER commit
 docs/
+RUNBOOK.md
+build-tutorial.md
+considerations*.md
+contracts/coverage.json
 
 # tooling caches
 .playwright-mcp/
