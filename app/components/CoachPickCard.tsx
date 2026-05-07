@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useFallbackPhoto } from "@/hooks/useFallbackPhoto";
 
 export type CoachPickRow = {
   mw: number;
@@ -121,9 +122,11 @@ function PickCard({
   reasoning: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [photoFailed, setPhotoFailed] = useState(false);
+  const { src: resolvedSrc, onError: onPhotoError } = useFallbackPhoto(
+    photoUrl ?? undefined,
+  );
   const hasReasoning = reasoning && reasoning.length > 0;
-  const showPhoto = !!photoUrl && !photoFailed;
+  const showPhoto = !!resolvedSrc;
 
   return (
     <div className="w-[200px] shrink-0 snap-start rounded-xl border border-white/10 bg-[#0F0E14] p-3">
@@ -137,13 +140,13 @@ function PickCard({
           <div className="size-full overflow-hidden rounded-full bg-[#13121A] flex items-center justify-center relative">
             {showPhoto ? (
               <Image
-                src={photoUrl!}
+                src={resolvedSrc!}
                 alt={name}
                 fill
                 sizes="48px"
                 className="object-cover scale-110"
                 unoptimized
-                onError={() => setPhotoFailed(true)}
+                onError={onPhotoError}
               />
             ) : (
               <span className="text-xs font-semibold text-white/80">

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useFallbackPhoto } from "@/hooks/useFallbackPhoto";
 
 export type PlayerRowProps = {
   photoUrl?: string;
@@ -33,8 +34,8 @@ export function PlayerRow({
   const interactiveCls = interactive
     ? "transition hover:bg-white/[0.06] active:scale-[0.99] motion-reduce:active:scale-100"
     : "";
-  const [photoFailed, setPhotoFailed] = useState(false);
-  const showPhoto = !!photoUrl && !photoFailed;
+  const { src: resolvedSrc, onError: onPhotoError } = useFallbackPhoto(photoUrl);
+  const showPhoto = !!resolvedSrc;
   return (
     <Tag
       type={interactive ? "button" : undefined}
@@ -55,13 +56,13 @@ export function PlayerRow({
         <div className="size-full overflow-hidden rounded-full bg-[#13121A] flex items-center justify-center relative">
           {showPhoto ? (
             <Image
-              src={photoUrl!}
+              src={resolvedSrc!}
               alt={name}
               fill
               sizes="48px"
               className="object-cover scale-110"
               unoptimized
-              onError={() => setPhotoFailed(true)}
+              onError={onPhotoError}
             />
           ) : (
             <span className="text-xs font-semibold text-white/80">
