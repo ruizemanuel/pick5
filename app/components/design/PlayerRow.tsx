@@ -32,7 +32,7 @@ export function PlayerRow({
   const interactive = !!onClick;
   const Tag = interactive ? "button" : "div";
   const interactiveCls = interactive
-    ? "transition hover:bg-white/[0.06] active:scale-[0.99] motion-reduce:active:scale-100"
+    ? "transition cursor-pointer hover:bg-white/[0.06] active:scale-[0.99] motion-reduce:active:scale-100"
     : "";
   const { src: resolvedSrc, onError: onPhotoError } = useFallbackPhoto(photoUrl);
   const showPhoto = !!resolvedSrc;

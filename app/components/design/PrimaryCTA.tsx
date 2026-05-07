@@ -28,7 +28,7 @@ const PALETTE: Record<Variant, string> = {
 
 function classes(variant: Variant, extra = "") {
   return (
-    "font-display group relative w-full overflow-hidden rounded-2xl py-4 text-center text-xl tracking-[0.18em] transition active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 inline-flex items-center justify-center " +
+    "font-display group relative w-full overflow-hidden rounded-2xl py-4 text-center text-xl tracking-[0.18em] transition cursor-pointer active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60 inline-flex items-center justify-center " +
     PALETTE[variant] +
     " " +
     extra

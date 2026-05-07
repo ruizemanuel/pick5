@@ -71,7 +71,7 @@ export function PlayerPicker({
                   type="button"
                   onClick={() => setPos(p)}
                   className={
-                    "font-display shrink-0 rounded-full border px-3 py-1 text-sm tracking-[0.15em] transition " +
+                    "font-display shrink-0 rounded-full border px-3 py-1 text-sm tracking-[0.15em] transition cursor-pointer " +
                     (active
                       ? "border-[#00DF7C] bg-[#00DF7C] text-black"
                       : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10")
@@ -89,7 +89,7 @@ export function PlayerPicker({
             <button
               type="button"
               onClick={onClear}
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 transition hover:bg-white/10"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 transition cursor-pointer hover:bg-white/10"
             >
               Remove from this slot
             </button>

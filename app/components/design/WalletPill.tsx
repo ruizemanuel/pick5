@@ -26,7 +26,7 @@ export function WalletPill({
       type="button"
       {...rest}
       className={
-        "flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur transition hover:bg-white/10 active:scale-[0.98] motion-reduce:active:scale-100 " +
+        "flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur transition cursor-pointer hover:bg-white/10 active:scale-[0.98] motion-reduce:active:scale-100 " +
         className
       }
     >

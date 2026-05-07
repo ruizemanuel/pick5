@@ -167,7 +167,7 @@ function PickCard({
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="mt-3 w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-left text-[11px] text-white/60 transition hover:bg-white/5"
+          className="mt-3 w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-left text-[11px] text-white/60 transition cursor-pointer hover:bg-white/5"
           aria-expanded={open}
         >
           <span className="flex items-center justify-between">
