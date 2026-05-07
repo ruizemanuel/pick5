@@ -1,5 +1,7 @@
 export { PlayerSlot } from "./PlayerSlot";
 export type { PlayerSlotProps, PlayerSlotSize } from "./PlayerSlot";
+export { PlayerRow } from "./PlayerRow";
+export type { PlayerRowProps } from "./PlayerRow";
 export { Stat } from "./Stat";
 export type { StatProps } from "./Stat";
 export { PitchSVG } from "./PitchSVG";

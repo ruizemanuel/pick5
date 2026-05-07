@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
   Drawer,
@@ -9,6 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { PlayerRow } from "@/components/design/PlayerRow";
 import type { FplPlayerSummary } from "@/lib/fpl/types";
 
 const POSITIONS = ["", "GK", "DEF", "MID", "FWD"] as const;
@@ -99,8 +99,32 @@ export function PlayerPicker({
             {filtered.map((p) => (
               <PlayerRow
                 key={p.id}
-                player={p}
-                onPick={() => {
+                photoUrl={p.photoUrl}
+                initials={p.initials}
+                teamColor={p.teamColor}
+                name={p.name}
+                team={p.team}
+                position={p.position}
+                meta={
+                  <>
+                    <span>£{p.cost.toFixed(1)}</span>
+                    <span className="mx-1.5 text-white/25">·</span>
+                    <span className="tabular-nums">
+                      form {p.form.toFixed(1)}
+                    </span>
+                  </>
+                }
+                right={
+                  <>
+                    <div className="font-display text-base text-white tabular-nums">
+                      {p.points}
+                    </div>
+                    <div className="text-[9px] uppercase tracking-wider text-white/40">
+                      pts
+                    </div>
+                  </>
+                }
+                onClick={() => {
                   onPick(p.id);
                   onOpenChange(false);
                 }}
@@ -115,67 +139,5 @@ export function PlayerPicker({
         </div>
       </DrawerContent>
     </Drawer>
-  );
-}
-
-function PlayerRow({
-  player,
-  onPick,
-}: {
-  player: FplPlayerSummary;
-  onPick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-left transition hover:bg-white/[0.06] active:scale-[0.99] motion-reduce:active:scale-100"
-    >
-      <div
-        className="relative size-10 shrink-0 rounded-full p-[2px]"
-        style={{
-          background: `conic-gradient(from 180deg, ${player.teamColor}, transparent 70%, ${player.teamColor})`,
-        }}
-      >
-        <div className="size-full overflow-hidden rounded-full bg-[#13121A] flex items-center justify-center relative">
-          {player.photoUrl ? (
-            <Image
-              src={player.photoUrl}
-              alt={player.name}
-              fill
-              sizes="40px"
-              className="object-cover scale-110"
-              unoptimized
-            />
-          ) : (
-            <span className="text-[11px] font-semibold text-white/80">
-              {player.initials}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-white">
-          {player.name}
-        </div>
-        <div className="text-[11px] text-white/50">
-          <span className="font-display tracking-wider">{player.position}</span>
-          <span className="mx-1.5 text-white/25">·</span>
-          <span>{player.team}</span>
-          <span className="mx-1.5 text-white/25">·</span>
-          <span>£{player.cost.toFixed(1)}</span>
-          <span className="mx-1.5 text-white/25">·</span>
-          <span className="tabular-nums">form {player.form.toFixed(1)}</span>
-        </div>
-      </div>
-      <div className="text-right">
-        <div className="font-display text-base text-white tabular-nums">
-          {player.points}
-        </div>
-        <div className="text-[9px] uppercase tracking-wider text-white/40">
-          pts
-        </div>
-      </div>
-    </button>
   );
 }
