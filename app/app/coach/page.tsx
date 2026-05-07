@@ -3,13 +3,33 @@ import { getDb } from "@/lib/db";
 import { coachPicks } from "@/lib/db/schema";
 import { CoachPickCard } from "@/components/CoachPickCard";
 import { BottomNav } from "@/components/BottomNav";
+import { getBootstrap } from "@/lib/fpl/client";
 
 export const revalidate = 300;
 export const dynamic = "force-dynamic";
 
+type PlayerSummary = { name: string; team: string };
+
+async function buildPlayerMap(): Promise<Map<number, PlayerSummary>> {
+  try {
+    const bootstrap = await getBootstrap();
+    const teamShort = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]));
+    const m = new Map<number, PlayerSummary>();
+    for (const p of bootstrap.elements) {
+      m.set(p.id, { name: p.web_name, team: teamShort.get(p.team) ?? "" });
+    }
+    return m;
+  } catch {
+    return new Map();
+  }
+}
+
 export default async function CoachPage() {
   const db = getDb();
-  const rows = await db.select().from(coachPicks).orderBy(desc(coachPicks.mw));
+  const [rows, players] = await Promise.all([
+    db.select().from(coachPicks).orderBy(desc(coachPicks.mw)),
+    buildPlayerMap(),
+  ]);
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6 pb-24">
@@ -25,6 +45,8 @@ export default async function CoachPage() {
             row={{
               mw: row.mw,
               playerIds: row.playerIds,
+              playerNames: row.playerIds.map((id) => players.get(id)?.name ?? null),
+              playerTeams: row.playerIds.map((id) => players.get(id)?.team ?? null),
               reasoning: row.reasoning ?? [],
               commitmentHash: row.commitmentHash,
               publishTxHash: row.publishTxHash,
