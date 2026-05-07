@@ -29,22 +29,26 @@ async function main() {
   console.log("Deployer:", deployer.address);
   console.log("Target  :", target);
 
-  // 1. Send 0.1 CELO for gas
-  const celoBefore = await ethers.provider.getBalance(target);
-  console.log("\n[1/2] Sending 0.1 CELO for gas...");
-  const tx1 = await deployer.sendTransaction({
-    to: target,
-    value: ethers.parseEther("0.1"),
-  });
-  await tx1.wait();
-  const celoAfter = await ethers.provider.getBalance(target);
-  console.log(
-    "       balance:",
-    ethers.formatEther(celoBefore),
-    "→",
-    ethers.formatEther(celoAfter),
-    "CELO"
-  );
+  // 1. Send 0.1 CELO for gas (skipped if target IS the deployer)
+  if (target.toLowerCase() === deployer.address.toLowerCase()) {
+    console.log("\n[1/2] Target is the deployer wallet → skipping CELO transfer.");
+  } else {
+    const celoBefore = await ethers.provider.getBalance(target);
+    console.log("\n[1/2] Sending 0.1 CELO for gas...");
+    const tx1 = await deployer.sendTransaction({
+      to: target,
+      value: ethers.parseEther("0.1"),
+    });
+    await tx1.wait();
+    const celoAfter = await ethers.provider.getBalance(target);
+    console.log(
+      "       balance:",
+      ethers.formatEther(celoBefore),
+      "→",
+      ethers.formatEther(celoAfter),
+      "CELO"
+    );
+  }
 
   // 2. Mint 50 mock USDT
   console.log("\n[2/2] Minting 50 mock USDT...");
