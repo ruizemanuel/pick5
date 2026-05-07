@@ -12,7 +12,8 @@
     "verify": "hardhat verify",
     "lint": "echo 'no-op'",
     "register:coach:celo": "hardhat run scripts/register-coach.ts --network celo",
-    "register:coach:sepolia": "hardhat run scripts/register-coach.ts --network celo-sepolia"
+    "register:coach:sepolia": "hardhat run scripts/register-coach.ts --network celo-sepolia",
+    "fund:me:sepolia": "hardhat run scripts/fund-my-wallet.ts --network celo-sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
