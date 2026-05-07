@@ -2,6 +2,7 @@ const FPL = "https://fantasy.premierleague.com/api";
 
 export type FplPlayerElement = {
   id: number;
+  code: number;
   web_name: string;
   team: number;
   element_type: number;
