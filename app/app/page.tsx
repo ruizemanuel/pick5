@@ -21,7 +21,13 @@ const PREVIEW_LINEUP: PitchSlot[] = [
     position: "MID",
     teamColor: "#EF0107",
   },
-  { empty: true },
+  {
+    photoUrl: FPL_PHOTO(118748),
+    name: "M.Salah",
+    team: "LIV",
+    position: "MID",
+    teamColor: "#C8102E",
+  },
   {
     photoUrl: FPL_PHOTO(244851),
     name: "Palmer",
@@ -29,7 +35,13 @@ const PREVIEW_LINEUP: PitchSlot[] = [
     position: "MID",
     teamColor: "#034694",
   },
-  { empty: true },
+  {
+    photoUrl: FPL_PHOTO(462424),
+    name: "Saliba",
+    team: "ARS",
+    position: "DEF",
+    teamColor: "#EF0107",
+  },
 ];
 
 const LOCK_DATE = new Date("2026-05-16T14:00:00Z");

@@ -7,9 +7,9 @@ import { PlayerSlot, type PlayerSlotProps } from "./PlayerSlot";
 export type PitchSlot = (PlayerSlotProps & { empty?: false }) | { empty: true };
 
 const PENTAGON_POSITIONS = [
-  { top: "13%", left: "50%" },
-  { top: "37%", left: "22%" },
-  { top: "37%", left: "78%" },
+  { top: "17%", left: "50%" },
+  { top: "39%", left: "22%" },
+  { top: "39%", left: "78%" },
   { top: "67%", left: "32%" },
   { top: "67%", left: "68%" },
 ] as const;
