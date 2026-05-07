@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
 export type PlayerSlotSize = "lg" | "md" | "sm";
 
@@ -32,6 +35,8 @@ export function PlayerSlot({
   const px = SIZE_PX[size];
   const labelInitialsCls =
     size === "lg" ? "text-2xl" : size === "md" ? "text-base" : "text-xs";
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = !!photoUrl && !photoFailed;
 
   return (
     <div
@@ -46,14 +51,15 @@ export function PlayerSlot({
           }}
         >
           <div className="size-full rounded-full bg-[#13121A] overflow-hidden flex items-center justify-center relative">
-            {photoUrl ? (
+            {showPhoto ? (
               <Image
-                src={photoUrl}
+                src={photoUrl!}
                 alt={name ?? ""}
                 fill
                 sizes={`${px}px`}
                 className="object-cover scale-110"
                 unoptimized
+                onError={() => setPhotoFailed(true)}
               />
             ) : initials ? (
               <span

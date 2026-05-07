@@ -9,6 +9,7 @@ const FPL_PHOTO = (code: number) =>
 const PREVIEW_LINEUP: PitchSlot[] = [
   {
     photoUrl: FPL_PHOTO(223094),
+    initials: "EH",
     name: "Haaland",
     team: "MCI",
     position: "FWD",
@@ -16,20 +17,23 @@ const PREVIEW_LINEUP: PitchSlot[] = [
   },
   {
     photoUrl: FPL_PHOTO(223340),
+    initials: "BS",
     name: "Saka",
     team: "ARS",
     position: "MID",
     teamColor: "#EF0107",
   },
   {
-    photoUrl: FPL_PHOTO(118748),
-    name: "M.Salah",
-    team: "LIV",
-    position: "MID",
-    teamColor: "#C8102E",
+    photoUrl: FPL_PHOTO(178186),
+    initials: "JB",
+    name: "Bowen",
+    team: "WHU",
+    position: "FWD",
+    teamColor: "#7A263A",
   },
   {
     photoUrl: FPL_PHOTO(244851),
+    initials: "CP",
     name: "Palmer",
     team: "CHE",
     position: "MID",
@@ -37,6 +41,7 @@ const PREVIEW_LINEUP: PitchSlot[] = [
   },
   {
     photoUrl: FPL_PHOTO(462424),
+    initials: "WS",
     name: "Saliba",
     team: "ARS",
     position: "DEF",

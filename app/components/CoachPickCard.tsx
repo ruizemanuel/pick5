@@ -121,7 +121,9 @@ function PickCard({
   reasoning: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const hasReasoning = reasoning && reasoning.length > 0;
+  const showPhoto = !!photoUrl && !photoFailed;
 
   return (
     <div className="w-[200px] shrink-0 snap-start rounded-xl border border-white/10 bg-[#0F0E14] p-3">
@@ -133,14 +135,15 @@ function PickCard({
           }}
         >
           <div className="size-full overflow-hidden rounded-full bg-[#13121A] flex items-center justify-center relative">
-            {photoUrl ? (
+            {showPhoto ? (
               <Image
-                src={photoUrl}
+                src={photoUrl!}
                 alt={name}
                 fill
                 sizes="48px"
                 className="object-cover scale-110"
                 unoptimized
+                onError={() => setPhotoFailed(true)}
               />
             ) : (
               <span className="text-xs font-semibold text-white/80">
