@@ -47,14 +47,18 @@ export default function MyTeamPage() {
   const { lineup, isLoading: lineupLoading, refetch: refetchLineup } = useLineup();
   const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
   const [playersLoaded, setPlayersLoaded] = useState(false);
+  const [refreshingLineup, setRefreshingLineup] = useState(true);
   const [live, setLive] = useState<LiveStats | null>(null);
   const [me, setMe] = useState<MeRow | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   // Force a fresh chain read on mount — wagmi may otherwise serve a stale
   // empty lineup from cache when arriving here right after joinTournament.
+  // Block the "No Lineup Yet" branch until the refetch resolves so we don't
+  // flash that state when the cache is stale.
   useEffect(() => {
-    refetchLineup();
+    setRefreshingLineup(true);
+    refetchLineup().finally(() => setRefreshingLineup(false));
   }, [refetchLineup]);
 
   useEffect(() => {
@@ -102,8 +106,11 @@ export default function MyTeamPage() {
   const hasLineup = ids.length === 5;
   const allMapped = hasLineup && ids.every((id) => playerMap.has(id));
   const showLoadingState =
-    lineupLoading || (hasLineup && (!playersLoaded || !allMapped));
-  const showNoLineupState = playersLoaded && !lineupLoading && !hasLineup;
+    lineupLoading ||
+    refreshingLineup ||
+    (hasLineup && (!playersLoaded || !allMapped));
+  const showNoLineupState =
+    playersLoaded && !lineupLoading && !refreshingLineup && !hasLineup;
 
   const pitchSlots: PitchSlot[] = useMemo(() => {
     if (!lineup) return Array(5).fill({ empty: true } as const);
