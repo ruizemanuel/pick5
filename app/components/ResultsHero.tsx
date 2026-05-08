@@ -44,6 +44,7 @@ function useCounter(target: number, durationMs = 800) {
 export function ResultsHero() {
   const pool = usePool();
   const [busy, setBusy] = useState(false);
+  const [claimedLocally, setClaimedLocally] = useState(false);
 
   const prizeUSDT = Number(formatUnits(pool.prizeAmount, 6));
   const animatedPrize = useCounter(prizeUSDT);
@@ -56,6 +57,7 @@ export function ResultsHero() {
     setBusy(true);
     try {
       await pool.claimPrize();
+      setClaimedLocally(true);
       toast.success("Prize claimed 🏆");
       posthog.capture("prize_claimed");
       await pool.refetchPrizeClaimed();
@@ -123,7 +125,7 @@ export function ResultsHero() {
         </div>
         <div className="mt-1 text-[11px] text-white/40">USDT · seed + yield</div>
 
-        {pool.isWinner && !pool.prizeClaimed && (
+        {pool.isWinner && !pool.prizeClaimed && !claimedLocally && (
           <div className="mt-6">
             <PrimaryCTA
               variant="gold"
@@ -133,7 +135,7 @@ export function ResultsHero() {
             />
           </div>
         )}
-        {pool.isWinner && pool.prizeClaimed && (
+        {pool.isWinner && (pool.prizeClaimed || claimedLocally) && (
           <div className="mt-6 rounded-xl border border-[#00DF7C]/30 bg-[#00DF7C]/10 px-3 py-2 text-xs text-[#00DF7C]">
             Prize already claimed.
           </div>

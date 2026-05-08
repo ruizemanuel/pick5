@@ -26,11 +26,17 @@ export default function ProfilePage() {
   const pool = usePool();
   const [claimBusy, setClaimBusy] = useState(false);
   const [withdrawBusy, setWithdrawBusy] = useState(false);
+  // Local guards: hide the CTAs immediately after a successful tx so a
+  // late chain-refetch (wagmi can lag a tick) can't leave the button
+  // visible+enabled and trigger a second tx that reverts AlreadyClaimed.
+  const [claimedLocally, setClaimedLocally] = useState(false);
+  const [withdrawnLocally, setWithdrawnLocally] = useState(false);
 
   async function onClaim() {
     setClaimBusy(true);
     try {
       await pool.claimPrize();
+      setClaimedLocally(true);
       toast.success("Prize claimed 🏆");
       posthog.capture("prize_claimed");
       await pool.refetchPrizeClaimed();
@@ -46,6 +52,7 @@ export default function ProfilePage() {
     setWithdrawBusy(true);
     try {
       await pool.withdrawDeposit();
+      setWithdrawnLocally(true);
       toast.success("Deposit withdrawn");
       posthog.capture("withdraw_completed", { amount_usdt: 5 });
       await pool.refetchDepositWithdrawn();
@@ -116,9 +123,13 @@ export default function ProfilePage() {
     });
   }
 
-  const showClaim = pool.isWinner && pool.isFinalized && !pool.prizeClaimed;
+  const showClaim =
+    pool.isWinner && pool.isFinalized && !pool.prizeClaimed && !claimedLocally;
   const showWithdraw =
-    pool.hasJoined && pool.isFinalized && !pool.depositWithdrawn;
+    pool.hasJoined &&
+    pool.isFinalized &&
+    !pool.depositWithdrawn &&
+    !withdrawnLocally;
 
   return (
     <main className="min-h-dvh bg-[#08070D] text-white">
