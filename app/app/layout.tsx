@@ -16,8 +16,28 @@ const inter = Inter_Tight({
 });
 
 export const metadata: Metadata = {
-  title: "Pick5 — No-loss fantasy on Celo",
-  description: "Pick 5 Premier League players. Win the pool. Lose nothing.",
+  metadataBase: new URL("https://pick5-beta.vercel.app"),
+  title: {
+    default: "Pick5 — No-loss fantasy on Celo",
+    template: "%s · Pick5",
+  },
+  description:
+    "Pick 5 Premier League players. Win the pool. Lose nothing. Built on Celo with an ERC-8004 verified AI Coach.",
+  applicationName: "Pick5",
+  openGraph: {
+    title: "Pick5 — No-loss fantasy on Celo",
+    description:
+      "Pick 5 Premier League players. Win the pool. Lose nothing. Built on Celo with an ERC-8004 verified AI Coach.",
+    siteName: "Pick5",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pick5 — No-loss fantasy on Celo",
+    description:
+      "Pick 5 Premier League players. Win the pool. Lose nothing.",
+  },
 };
 
 export default function RootLayout({
