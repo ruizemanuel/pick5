@@ -11,29 +11,37 @@ export type LeaderboardRow = {
   rank: number | null;
 };
 
-const PODIUM_STYLES = [
-  {
-    border: "border-[#F5C842]/40",
-    bg: "bg-gradient-to-b from-[#F5C842]/15 to-[#F5C842]/5",
-    text: "text-[#F5C842]",
-    glow: "shadow-[0_8px_32px_rgba(245,200,66,0.15)]",
+type Tier = {
+  label: string;
+  border: string;
+  bg: string;
+  rankColor: string;
+  glow: string;
+};
+
+const TIERS: Record<1 | 2 | 3, Tier> = {
+  1: {
     label: "GOLD",
+    border: "border-[#F5C842]/40",
+    bg: "bg-gradient-to-r from-[#F5C842]/10 to-[#F5C842]/[0.02]",
+    rankColor: "text-[#F5C842]",
+    glow: "shadow-[0_4px_20px_rgba(245,200,66,0.12)]",
   },
-  {
-    border: "border-[#C0C0C0]/40",
-    bg: "bg-gradient-to-b from-[#C0C0C0]/15 to-[#C0C0C0]/5",
-    text: "text-[#C0C0C0]",
-    glow: "shadow-[0_8px_24px_rgba(192,192,192,0.12)]",
+  2: {
     label: "SILVER",
+    border: "border-[#C0C0C0]/35",
+    bg: "bg-gradient-to-r from-[#C0C0C0]/8 to-[#C0C0C0]/[0.02]",
+    rankColor: "text-[#C0C0C0]",
+    glow: "shadow-[0_4px_16px_rgba(192,192,192,0.08)]",
   },
-  {
-    border: "border-[#CD7F32]/40",
-    bg: "bg-gradient-to-b from-[#CD7F32]/15 to-[#CD7F32]/5",
-    text: "text-[#CD7F32]",
-    glow: "shadow-[0_8px_24px_rgba(205,127,50,0.12)]",
+  3: {
     label: "BRONZE",
+    border: "border-[#CD7F32]/35",
+    bg: "bg-gradient-to-r from-[#CD7F32]/10 to-[#CD7F32]/[0.02]",
+    rankColor: "text-[#CD7F32]",
+    glow: "shadow-[0_4px_16px_rgba(205,127,50,0.08)]",
   },
-] as const;
+};
 
 function truncate(addr: string) {
   if (addr.length <= 12) return addr;
@@ -64,73 +72,40 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
     );
   }
 
-  const podium = ranked.slice(0, 3);
-  const rest = ranked.slice(3);
   const myIndex = me ? ranked.findIndex((r) => r.wallet.toLowerCase() === me) : -1;
   const myRow = myIndex >= 0 ? ranked[myIndex] : null;
   const showSelfBanner = !!myRow && myIndex >= 10;
 
   return (
     <>
-      {/* Podium */}
-      <section className="grid grid-cols-3 gap-2">
-        {[1, 0, 2].map((podiumIdx) => {
-          const row = podium[podiumIdx];
-          if (!row) {
-            return <div key={podiumIdx} className="rounded-2xl border border-white/5 bg-white/[0.02] p-3" />;
-          }
-          const style = PODIUM_STYLES[podiumIdx];
-          const heightCls = podiumIdx === 0 ? "pt-6 pb-5" : "pt-4 pb-4";
-          const isMe = me && row.wallet.toLowerCase() === me;
-          return (
-            <div
-              key={row.wallet}
-              className={`rounded-2xl border ${style.border} ${style.bg} ${style.glow} ${heightCls} px-3 text-center ${isMe ? "ring-2 ring-[#00DF7C]/40" : ""}`}
-            >
-              <div className={`text-[10px] font-medium uppercase tracking-[0.2em] ${style.text}`}>
-                {style.label}
-              </div>
-              <div className={`font-display mt-2 text-3xl leading-none ${style.text}`}>
-                #{row.displayRank}
-              </div>
-              <div className="mt-2 truncate font-mono text-[11px] text-white/70">
-                {truncate(row.wallet)}
-              </div>
-              <div className="mt-1 font-display text-xl tabular-nums text-white">
-                {row.total}
-              </div>
-              <div className="text-[9px] uppercase tracking-wider text-white/40">
-                pts
-              </div>
-            </div>
-          );
-        })}
-      </section>
+      <ol className="space-y-1.5">
+        {ranked.map((r) => {
+          const isMe = me && r.wallet.toLowerCase() === me;
+          const tier =
+            r.displayRank === 1 || r.displayRank === 2 || r.displayRank === 3
+              ? TIERS[r.displayRank as 1 | 2 | 3]
+              : null;
+          const baseCls = tier
+            ? `${tier.border} ${tier.bg} ${tier.glow}`
+            : "border-white/10 bg-white/[0.03] hover:bg-white/5";
+          const meRing = isMe ? "ring-2 ring-[#00DF7C]/40" : "";
 
-      {/* Ranked list */}
-      {rest.length > 0 && (
-        <section className="mt-6">
-          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/50">
-            Standings
-          </div>
-          <ol className="mt-2 space-y-1.5">
-            {rest.map((r) => {
-              const isMe = me && r.wallet.toLowerCase() === me;
-              return (
-                <li
-                  key={r.wallet}
-                  className={
-                    "flex items-center justify-between rounded-xl border px-3 py-2.5 transition " +
-                    (isMe
-                      ? "border-[#00DF7C]/40 bg-[#00DF7C]/5"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/5")
-                  }
+          return (
+            <li
+              key={r.wallet}
+              className={`flex items-center justify-between rounded-xl border px-3 py-3 transition ${baseCls} ${meRing}`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className={`font-display w-9 shrink-0 text-xl tabular-nums ${
+                    tier ? tier.rankColor : "text-white/60"
+                  }`}
                 >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="font-display w-7 shrink-0 text-base text-white/60 tabular-nums">
-                      {r.displayRank}
-                    </span>
-                    <span className="truncate font-mono text-xs text-white/80">
+                  {r.displayRank}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-mono text-xs text-white/85">
                       {truncate(r.wallet)}
                     </span>
                     {isMe && (
@@ -139,20 +114,28 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
                       </span>
                     )}
                   </div>
-                  <span className="font-display text-base tabular-nums text-white">
-                    {r.total}
-                    <span className="ml-1 text-[9px] uppercase tracking-wider text-white/40">
-                      pts
-                    </span>
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      )}
+                  {tier && (
+                    <div
+                      className={`text-[9px] uppercase tracking-[0.18em] ${tier.rankColor}`}
+                    >
+                      {tier.label}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-display text-lg tabular-nums text-white">
+                  {r.total}
+                </div>
+                <div className="text-[9px] uppercase tracking-wider text-white/40">
+                  pts
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
 
-      {/* Sticky self banner */}
       {showSelfBanner && myRow && (
         <div className="sticky bottom-20 z-30 mt-4">
           <div className="rounded-2xl border border-[#00DF7C]/40 bg-[#0F0E14]/95 px-4 py-3 backdrop-blur shadow-[0_8px_32px_rgba(0,223,124,0.18)]">
