@@ -87,13 +87,12 @@ export default async function Image() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            marginTop: 24,
           }}
         >
           <div
             style={{
-              fontSize: 140,
-              lineHeight: 0.95,
+              fontSize: 124,
+              lineHeight: 0.98,
               letterSpacing: -1,
               display: "flex",
               flexDirection: "column",
@@ -114,6 +113,7 @@ export default async function Image() {
             fontSize: 24,
             letterSpacing: 3,
             color: "rgba(255,255,255,0.55)",
+            marginTop: 40,
           }}
         >
           <span>No-loss fantasy on Celo</span>
