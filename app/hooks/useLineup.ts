@@ -15,12 +15,14 @@ export function useLineup() {
     args: address ? [address] : undefined,
     query: {
       enabled: Boolean(address) && Boolean(poolAddr),
-      refetchInterval: 60_000,
+      refetchInterval: 10_000,
     },
   });
 
   return {
     lineup: r.data as readonly [bigint, bigint, bigint, bigint, bigint] | undefined,
     isLoading: r.isLoading,
+    isFetching: r.isFetching,
+    refetch: r.refetch,
   };
 }

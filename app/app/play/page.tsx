@@ -44,17 +44,25 @@ function partsBetween(target: Date, now: Date) {
 
 export default function MyTeamPage() {
   const { address, isConnected } = useAccount();
-  const { lineup, isLoading: lineupLoading } = useLineup();
+  const { lineup, isLoading: lineupLoading, refetch: refetchLineup } = useLineup();
   const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
+  const [playersLoaded, setPlayersLoaded] = useState(false);
   const [live, setLive] = useState<LiveStats | null>(null);
   const [me, setMe] = useState<MeRow | null>(null);
   const [now, setNow] = useState(() => new Date());
+
+  // Force a fresh chain read on mount — wagmi may otherwise serve a stale
+  // empty lineup from cache when arriving here right after joinTournament.
+  useEffect(() => {
+    refetchLineup();
+  }, [refetchLineup]);
 
   useEffect(() => {
     fetch("/api/fpl/players")
       .then((r) => r.json())
       .then((d: { players: FplPlayerSummary[] }) => setPlayers(d.players))
-      .catch(() => setPlayers([]));
+      .catch(() => setPlayers([]))
+      .finally(() => setPlayersLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -92,6 +100,10 @@ export default function MyTeamPage() {
   }, [lineup]);
 
   const hasLineup = ids.length === 5;
+  const allMapped = hasLineup && ids.every((id) => playerMap.has(id));
+  const showLoadingState =
+    lineupLoading || (hasLineup && (!playersLoaded || !allMapped));
+  const showNoLineupState = playersLoaded && !lineupLoading && !hasLineup;
 
   const pitchSlots: PitchSlot[] = useMemo(() => {
     if (!lineup) return Array(5).fill({ empty: true } as const);
@@ -179,7 +191,7 @@ export default function MyTeamPage() {
           </p>
         </section>
 
-        {lineupLoading && !hasLineup && (
+        {showLoadingState && (
           <section className="pt-6">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center text-sm text-white/50">
               Loading lineup…
@@ -187,7 +199,7 @@ export default function MyTeamPage() {
           </section>
         )}
 
-        {!lineupLoading && !hasLineup && (
+        {showNoLineupState && (
           <section className="pt-6 space-y-3">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
               <div className="font-display text-2xl text-white">
@@ -201,7 +213,7 @@ export default function MyTeamPage() {
           </section>
         )}
 
-        {hasLineup && (
+        {hasLineup && allMapped && (
           <>
             <section className="pt-5">
               <Pitch slots={pitchSlots} />
