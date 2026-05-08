@@ -44,22 +44,18 @@ function partsBetween(target: Date, now: Date) {
 
 export default function MyTeamPage() {
   const { address, isConnected } = useAccount();
-  const { lineup, isLoading: lineupLoading, refetch: refetchLineup } = useLineup();
+  const { lineup, refetch: refetchLineup } = useLineup();
   const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
   const [playersLoaded, setPlayersLoaded] = useState(false);
-  const [refreshingLineup, setRefreshingLineup] = useState(true);
   const [live, setLive] = useState<LiveStats | null>(null);
   const [me, setMe] = useState<MeRow | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   // Force a fresh chain read on mount — wagmi may otherwise serve a stale
   // empty lineup from cache when arriving here right after joinTournament.
-  // Block the "No Lineup Yet" branch until the refetch resolves so we don't
-  // flash that state when the cache is stale.
   useEffect(() => {
-    setRefreshingLineup(true);
-    refetchLineup().finally(() => setRefreshingLineup(false));
-  }, [refetchLineup]);
+    if (address) refetchLineup();
+  }, [address, refetchLineup]);
 
   useEffect(() => {
     fetch("/api/fpl/players")
@@ -105,12 +101,14 @@ export default function MyTeamPage() {
 
   const hasLineup = ids.length === 5;
   const allMapped = hasLineup && ids.every((id) => playerMap.has(id));
+  // lineup === undefined means wagmi hasn't returned a chain read yet for the
+  // connected address (query disabled because !address, or query in flight).
+  // Treat that as loading — only show "No Lineup Yet" once we have positive
+  // proof from the chain that the user's lineup is zero.
+  const haveChainResult = lineup !== undefined;
   const showLoadingState =
-    lineupLoading ||
-    refreshingLineup ||
-    (hasLineup && (!playersLoaded || !allMapped));
-  const showNoLineupState =
-    playersLoaded && !lineupLoading && !refreshingLineup && !hasLineup;
+    !haveChainResult || (hasLineup && (!playersLoaded || !allMapped));
+  const showNoLineupState = haveChainResult && playersLoaded && !hasLineup;
 
   const pitchSlots: PitchSlot[] = useMemo(() => {
     if (!lineup) return Array(5).fill({ empty: true } as const);
