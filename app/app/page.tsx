@@ -1,6 +1,6 @@
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
+import { LandingCTA } from "@/components/LandingCTA";
 import { Pitch, type PitchSlot } from "@/components/design/Pitch";
-import { PrimaryCTALink } from "@/components/design/PrimaryCTA";
 import { Stat } from "@/components/design/Stat";
 
 const FPL_PHOTO = (code: number) =>
@@ -102,7 +102,7 @@ export default function LandingPage() {
         </section>
 
         <section className="pt-8">
-          <PrimaryCTALink href="/play/build" label="Start Playing" />
+          <LandingCTA />
           <p className="mt-3 text-center text-[11px] text-white/40">
             Built on Celo · ERC-8004 verified Coach
           </p>
