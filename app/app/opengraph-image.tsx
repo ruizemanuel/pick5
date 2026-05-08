@@ -51,7 +51,12 @@ export default async function Image() {
           }}
         >
           <div
-            style={{ fontSize: 64, letterSpacing: 14, display: "flex" }}
+            style={{
+              fontSize: 64,
+              letterSpacing: 14,
+              display: "flex",
+              marginLeft: 2,
+            }}
           >
             <span>PICK</span>
             <span style={{ color: "#00DF7C" }}>5</span>
@@ -91,8 +96,8 @@ export default async function Image() {
         >
           <div
             style={{
-              fontSize: 124,
-              lineHeight: 0.98,
+              fontSize: 116,
+              lineHeight: 1,
               letterSpacing: -1,
               display: "flex",
               flexDirection: "column",
@@ -113,11 +118,10 @@ export default async function Image() {
             fontSize: 24,
             letterSpacing: 3,
             color: "rgba(255,255,255,0.55)",
-            marginTop: 40,
           }}
         >
-          <span>No-loss fantasy on Celo</span>
-          <span>ERC-8004 verified AI Coach</span>
+          <span style={{ marginLeft: 4 }}>No-loss fantasy on Celo</span>
+          <span style={{ marginRight: 2 }}>ERC-8004 verified AI Coach</span>
         </div>
       </div>
     ),
