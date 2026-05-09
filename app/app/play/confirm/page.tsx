@@ -57,15 +57,19 @@ export default function ConfirmPage() {
   const pool = usePool();
   const [step, setStep] = useState<"approve" | "join">("approve");
   const [busy, setBusy] = useState(false);
+  const [didJoin, setDidJoin] = useState(false);
   const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
 
   useEffect(() => {
+    // Once the join tx confirms we navigate to /play and clear the draft
+    // explicitly. Don't bounce back to /play/build during that transition.
+    if (didJoin) return;
     if (lineup.some((x) => x === null)) {
       router.replace("/play/build" as Route);
       return;
     }
     if (pool.allowance >= parseUnits("5", 6)) setStep("join");
-  }, [lineup, pool.allowance, router]);
+  }, [lineup, pool.allowance, router, didJoin]);
 
   useEffect(() => {
     fetch("/api/fpl/players")
@@ -127,11 +131,15 @@ export default function ConfirmPage() {
         number,
       ];
       await pool.join(tuple);
+      setDidJoin(true);
       posthog.capture("deposit_completed", { amount_usdt: 5 });
-      await celebrate();
       toast.success("You're in 🎉");
+      // Navigate first so the confetti and clear() don't fire while the
+      // /play/confirm useEffect is still mounted (it would otherwise see
+      // the cleared lineup and redirect to /play/build).
+      router.push("/play" as Route);
+      void celebrate();
       clear();
-      setTimeout(() => router.push("/play" as Route), 900);
     } catch (e) {
       console.error(e);
       toast.error("Join failed");

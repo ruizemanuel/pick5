@@ -47,14 +47,23 @@ export default function MyTeamPage() {
   const { lineup, refetch: refetchLineup } = useLineup();
   const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
   const [playersLoaded, setPlayersLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(true);
   const [live, setLive] = useState<LiveStats | null>(null);
   const [me, setMe] = useState<MeRow | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   // Force a fresh chain read on mount — wagmi may otherwise serve a stale
-  // empty lineup from cache when arriving here right after joinTournament.
+  // empty lineup from cache (e.g., the user looked at /play before joining,
+  // wagmi cached zeros, then they joined and landed back here). Block the
+  // empty-state branch until the refetch resolves so we never flash
+  // "No Lineup Yet" against stale cache.
   useEffect(() => {
-    if (address) refetchLineup();
+    if (!address) {
+      setRefreshing(false);
+      return;
+    }
+    setRefreshing(true);
+    refetchLineup().finally(() => setRefreshing(false));
   }, [address, refetchLineup]);
 
   useEffect(() => {
@@ -101,27 +110,10 @@ export default function MyTeamPage() {
 
   const hasLineup = ids.length === 5;
   const allMapped = hasLineup && ids.every((id) => playerMap.has(id));
-  const haveChainResult = lineup !== undefined;
+  const haveChainResult = lineup !== undefined && !refreshing;
   const showLoadingState =
     !haveChainResult || (hasLineup && (!playersLoaded || !allMapped));
   const showNoLineupState = haveChainResult && playersLoaded && !hasLineup;
-
-  // Temporary debug logging — remove once loading-state issue is fully verified.
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("[pick5/play]", {
-      address,
-      lineup: lineup ? Array.from(lineup).map(String) : lineup,
-      ids,
-      hasLineup,
-      haveChainResult,
-      playersLoaded,
-      allMapped,
-      showLoadingState,
-      showNoLineupState,
-      ts: new Date().toISOString(),
-    });
-  }, [address, lineup, ids, hasLineup, haveChainResult, playersLoaded, allMapped, showLoadingState, showNoLineupState]);
 
   const pitchSlots: PitchSlot[] = useMemo(() => {
     if (!lineup) return Array(5).fill({ empty: true } as const);
