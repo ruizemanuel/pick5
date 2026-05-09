@@ -101,14 +101,27 @@ export default function MyTeamPage() {
 
   const hasLineup = ids.length === 5;
   const allMapped = hasLineup && ids.every((id) => playerMap.has(id));
-  // lineup === undefined means wagmi hasn't returned a chain read yet for the
-  // connected address (query disabled because !address, or query in flight).
-  // Treat that as loading — only show "No Lineup Yet" once we have positive
-  // proof from the chain that the user's lineup is zero.
   const haveChainResult = lineup !== undefined;
   const showLoadingState =
     !haveChainResult || (hasLineup && (!playersLoaded || !allMapped));
   const showNoLineupState = haveChainResult && playersLoaded && !hasLineup;
+
+  // Temporary debug logging — remove once loading-state issue is fully verified.
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[pick5/play]", {
+      address,
+      lineup: lineup ? Array.from(lineup).map(String) : lineup,
+      ids,
+      hasLineup,
+      haveChainResult,
+      playersLoaded,
+      allMapped,
+      showLoadingState,
+      showNoLineupState,
+      ts: new Date().toISOString(),
+    });
+  }, [address, lineup, ids, hasLineup, haveChainResult, playersLoaded, allMapped, showLoadingState, showNoLineupState]);
 
   const pitchSlots: PitchSlot[] = useMemo(() => {
     if (!lineup) return Array(5).fill({ empty: true } as const);

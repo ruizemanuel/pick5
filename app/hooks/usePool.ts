@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, usePublicClient } from "wagmi";
 import { erc20Abi, parseUnits } from "viem";
 import { pick5PoolAbi } from "@/lib/contracts/abi";
 import { ADDRESSES, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
@@ -66,6 +66,15 @@ export function usePool() {
   });
 
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+
+  async function writeAndWait(args: Parameters<typeof writeContractAsync>[0]) {
+    const hash = await writeContractAsync(args);
+    if (publicClient) {
+      await publicClient.waitForTransactionReceipt({ hash });
+    }
+    return hash;
+  }
 
   const winnerAddr = winner.data as `0x${string}` | undefined;
   const isWinner =
@@ -82,27 +91,27 @@ export function usePool() {
     prizeClaimed: Boolean(prizeClaimed.data),
     depositWithdrawn: Boolean(depositWithdrawn.data),
     approve: () =>
-      writeContractAsync({
+      writeAndWait({
         abi: erc20Abi,
         address: usdtAddr,
         functionName: "approve",
         args: [poolAddr, parseUnits("5", 6)],
       }),
     join: (lineup: readonly [number, number, number, number, number]) =>
-      writeContractAsync({
+      writeAndWait({
         abi: pick5PoolAbi,
         address: poolAddr,
         functionName: "joinTournament",
         args: [lineup],
       }),
     claimPrize: () =>
-      writeContractAsync({
+      writeAndWait({
         abi: pick5PoolAbi,
         address: poolAddr,
         functionName: "claimPrize",
       }),
     withdrawDeposit: () =>
-      writeContractAsync({
+      writeAndWait({
         abi: pick5PoolAbi,
         address: poolAddr,
         functionName: "withdrawDeposit",
