@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getBootstrap } from "@/lib/fpl/client";
 import { teamColor } from "@/lib/fpl/teamColors";
+import type { FplPlayerSummary } from "@/lib/fpl/types";
 
-export const revalidate = 3600;
 export const runtime = "nodejs";
 // Don't prerender at build time — FPL blocks Vercel's build IPs with 403.
 export const dynamic = "force-dynamic";
@@ -19,9 +19,17 @@ function deriveInitials(name: string): string {
     .join("");
 }
 
-export async function GET() {
-  const data = await getBootstrap();
-  const players = data.elements.map((e) => {
+// Per-instance memory cache so transient FPL hiccups don't surface as 500s
+// to the UI. Serverless containers are reused for multiple invocations,
+// and a 1h TTL keeps things fresh enough for a fantasy league.
+type CacheEntry = { players: FplPlayerSummary[]; ts: number };
+let memCache: CacheEntry | null = null;
+const FRESH_TTL_MS = 60 * 60 * 1000; // 1h
+
+function buildPlayers(
+  data: Awaited<ReturnType<typeof getBootstrap>>,
+): FplPlayerSummary[] {
+  return data.elements.map((e) => {
     const team = data.teams.find((t) => t.id === e.team)?.short_name ?? "";
     return {
       id: e.id,
@@ -38,5 +46,37 @@ export async function GET() {
       initials: deriveInitials(e.web_name),
     };
   });
-  return NextResponse.json({ players });
+}
+
+export async function GET() {
+  const now = Date.now();
+
+  if (memCache && now - memCache.ts < FRESH_TTL_MS) {
+    return NextResponse.json(
+      { players: memCache.players, cache: "fresh" },
+      { headers: { "Cache-Control": "public, max-age=600, s-maxage=3600" } },
+    );
+  }
+
+  try {
+    const data = await getBootstrap();
+    const players = buildPlayers(data);
+    memCache = { players, ts: now };
+    return NextResponse.json(
+      { players, cache: "miss" },
+      { headers: { "Cache-Control": "public, max-age=600, s-maxage=3600" } },
+    );
+  } catch (err) {
+    console.error("[fpl/players] upstream failed", err);
+    if (memCache) {
+      return NextResponse.json(
+        { players: memCache.players, cache: "stale" },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return NextResponse.json(
+      { players: [], error: "FPL upstream unavailable" },
+      { status: 502 },
+    );
+  }
 }
