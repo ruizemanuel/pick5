@@ -81,11 +81,7 @@ export function usePool() {
   // getLineup until we see the new state, otherwise the user lands on
   // /play with a stale "all zeros" read and sees "No Lineup Yet" for ~10s.
   async function pollLineupSettled(maxAttempts = 20, intervalMs = 300) {
-    if (!publicClient || !address) {
-      console.log("[pick5/poll] skipped — no publicClient or address");
-      return;
-    }
-    const t0 = Date.now();
+    if (!publicClient || !address) return;
     for (let i = 0; i < maxAttempts; i++) {
       try {
         const result = await publicClient.readContract({
@@ -95,15 +91,12 @@ export function usePool() {
           args: [address],
         });
         const arr = result as readonly (bigint | number)[];
-        const nonZero = arr.some((x) => Number(x) !== 0);
-        console.log(`[pick5/poll] attempt ${i + 1} (+${Date.now() - t0}ms):`, arr.map(String), "nonZero=", nonZero);
-        if (nonZero) return;
-      } catch (err) {
-        console.log(`[pick5/poll] attempt ${i + 1} (+${Date.now() - t0}ms) errored`, err);
+        if (arr.some((x) => Number(x) !== 0)) return;
+      } catch {
+        // ignore transient RPC errors and retry
       }
       await new Promise((r) => setTimeout(r, intervalMs));
     }
-    console.log(`[pick5/poll] gave up after ${Date.now() - t0}ms`);
   }
 
   const winnerAddr = winner.data as `0x${string}` | undefined;
