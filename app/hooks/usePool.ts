@@ -76,6 +76,28 @@ export function usePool() {
     return hash;
   }
 
+  // After joinTournament confirms, the read RPC node may lag a few seconds
+  // behind the writer (Celo Sepolia is especially noisy here). Poll
+  // getLineup until we see the new state, otherwise the user lands on
+  // /play with a stale "all zeros" read and sees "No Lineup Yet" for ~10s.
+  async function pollLineupSettled(maxAttempts = 20, intervalMs = 300) {
+    if (!publicClient || !address) return;
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const result = await publicClient.readContract({
+          address: poolAddr,
+          abi: pick5PoolAbi,
+          functionName: "getLineup",
+          args: [address],
+        });
+        if ((result as readonly bigint[]).some((x) => x !== BigInt(0))) return;
+      } catch {
+        // ignore transient RPC errors and retry
+      }
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+  }
+
   const winnerAddr = winner.data as `0x${string}` | undefined;
   const isWinner =
     !!address && !!winnerAddr && winnerAddr.toLowerCase() === address.toLowerCase();
@@ -97,13 +119,16 @@ export function usePool() {
         functionName: "approve",
         args: [poolAddr, parseUnits("5", 6)],
       }),
-    join: (lineup: readonly [number, number, number, number, number]) =>
-      writeAndWait({
+    join: async (lineup: readonly [number, number, number, number, number]) => {
+      const hash = await writeAndWait({
         abi: pick5PoolAbi,
         address: poolAddr,
         functionName: "joinTournament",
         args: [lineup],
-      }),
+      });
+      await pollLineupSettled();
+      return hash;
+    },
     claimPrize: () =>
       writeAndWait({
         abi: pick5PoolAbi,
