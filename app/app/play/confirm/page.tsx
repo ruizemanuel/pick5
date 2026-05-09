@@ -122,6 +122,8 @@ export default function ConfirmPage() {
 
   async function onJoin() {
     setBusy(true);
+    const t0 = Date.now();
+    console.log("[pick5/onJoin] start", new Date().toISOString());
     try {
       const tuple = completed as unknown as readonly [
         number,
@@ -131,12 +133,11 @@ export default function ConfirmPage() {
         number,
       ];
       await pool.join(tuple);
+      console.log(`[pick5/onJoin] pool.join() resolved (+${Date.now() - t0}ms)`);
       setDidJoin(true);
       posthog.capture("deposit_completed", { amount_usdt: 5 });
       toast.success("You're in 🎉");
-      // Navigate first so the confetti and clear() don't fire while the
-      // /play/confirm useEffect is still mounted (it would otherwise see
-      // the cleared lineup and redirect to /play/build).
+      console.log(`[pick5/onJoin] navigating to /play (+${Date.now() - t0}ms)`);
       router.push("/play" as Route);
       void celebrate();
       clear();

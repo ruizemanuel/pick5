@@ -115,6 +115,36 @@ export default function MyTeamPage() {
     !haveChainResult || (hasLineup && (!playersLoaded || !allMapped));
   const showNoLineupState = haveChainResult && playersLoaded && !hasLineup;
 
+  // Temporary debug logging — please copy DevTools console output if the
+  // post-submit "No Lineup Yet" flash recurs.
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[pick5/play]", {
+      address,
+      lineup: lineup ? Array.from(lineup).map(String) : lineup,
+      ids,
+      hasLineup,
+      haveChainResult,
+      refreshing,
+      playersLoaded,
+      allMapped,
+      showLoadingState,
+      showNoLineupState,
+      ts: new Date().toISOString(),
+    });
+  }, [
+    address,
+    lineup,
+    ids,
+    hasLineup,
+    haveChainResult,
+    refreshing,
+    playersLoaded,
+    allMapped,
+    showLoadingState,
+    showNoLineupState,
+  ]);
+
   const pitchSlots: PitchSlot[] = useMemo(() => {
     if (!lineup) return Array(5).fill({ empty: true } as const);
     return lineup.map((idBn) => {
