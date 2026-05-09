@@ -94,8 +94,8 @@ export function usePool() {
           functionName: "getLineup",
           args: [address],
         });
-        const arr = result as readonly bigint[];
-        const nonZero = arr.some((x) => x !== BigInt(0));
+        const arr = result as readonly (bigint | number)[];
+        const nonZero = arr.some((x) => Number(x) !== 0);
         console.log(`[pick5/poll] attempt ${i + 1} (+${Date.now() - t0}ms):`, arr.map(String), "nonZero=", nonZero);
         if (nonZero) return;
       } catch (err) {
