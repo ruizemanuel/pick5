@@ -7,8 +7,12 @@ import { usePool } from "@/hooks/usePool";
 export function LandingCTA() {
   const { isConnected } = useAccount();
   const pool = usePool();
-  const showResume = isConnected && pool.hasJoined;
 
+  if (pool.isFinalized) {
+    return <PrimaryCTALink href="/results" variant="gold" label="See Results" />;
+  }
+
+  const showResume = isConnected && pool.hasJoined;
   return (
     <PrimaryCTALink
       href={showResume ? "/play" : "/play/build"}

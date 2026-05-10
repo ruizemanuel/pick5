@@ -11,6 +11,7 @@ import { PlayerRow } from "@/components/design/PlayerRow";
 import { PrimaryCTALink } from "@/components/design/PrimaryCTA";
 import { Stat } from "@/components/design/Stat";
 import { useLineup } from "@/hooks/useLineup";
+import { usePool } from "@/hooks/usePool";
 import type { FplPlayerSummary } from "@/lib/fpl/types";
 
 type LiveStats = {
@@ -45,6 +46,7 @@ function partsBetween(target: Date, now: Date) {
 export default function MyTeamPage() {
   const { address, isConnected } = useAccount();
   const { lineup, refetch: refetchLineup } = useLineup();
+  const pool = usePool();
   const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
   const [playersLoaded, setPlayersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(true);
@@ -225,6 +227,31 @@ export default function MyTeamPage() {
 
         {hasLineup && allMapped && (
           <>
+            {pool.isFinalized && (
+              <section className="pt-5">
+                <Link
+                  href={"/results" as Route}
+                  className="group relative block overflow-hidden rounded-2xl border border-[#F5C842]/40 bg-gradient-to-r from-[#F5C842]/15 to-[#F5C842]/[0.02] px-4 py-4 transition hover:from-[#F5C842]/20"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#F5C842]">
+                        Tournament settled
+                      </div>
+                      <div className="font-display mt-1 text-xl text-white">
+                        See full results →
+                      </div>
+                    </div>
+                    <span
+                      className="font-display rounded-full border border-[#F5C842]/40 bg-[#F5C842]/10 px-2.5 py-1 text-[10px] tracking-wider text-[#F5C842]"
+                    >
+                      FINAL
+                    </span>
+                  </div>
+                </Link>
+              </section>
+            )}
+
             <section className="pt-5">
               <Pitch slots={pitchSlots} />
             </section>
