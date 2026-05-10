@@ -21,6 +21,9 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     uint256 public immutable lockTime;
     uint256 public immutable endTime;
     uint256 public constant DEPOSIT = 5_000_000;
+    uint256 public constant MAX_PARTICIPANTS = 500;
+    uint256 public constant EMERGENCY_DELAY = 30 days;
+    uint256 public constant ADMIN_EMERGENCY_DELAY = 60 days;
 
     uint256 public seedAmount;
 
@@ -38,6 +41,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     error TournamentLocked();
     error InvalidLineup();
     error ZeroAmount();
+    error PoolFull();
 
     constructor(
         address _oracle,
@@ -70,6 +74,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     function joinTournament(uint16[5] calldata lineup) external nonReentrant {
         if (block.timestamp >= lockTime) revert TournamentLocked();
         if (hasJoined[msg.sender]) revert AlreadyJoined();
+        if (participants.length >= MAX_PARTICIPANTS) revert PoolFull();
         _validateLineup(lineup);
 
         hasJoined[msg.sender] = true;
@@ -97,6 +102,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     error AlreadySubmitted();
     error LengthMismatch();
     error NoParticipants();
+    error UserMismatch();
 
     function submitScores(
         address[] calldata users,
@@ -104,6 +110,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         uint256    randomSeed
     ) external {
         if (msg.sender != oracle) revert NotOracle();
+        if (emergencyActive) revert EmergencyActiveErr();
         if (block.timestamp < endTime) revert TournamentNotEnded();
         if (scoresSubmitted) revert AlreadySubmitted();
         if (users.length != points.length) revert LengthMismatch();
@@ -113,6 +120,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         uint128 maxScore;
         uint256 tieCount;
         for (uint256 i = 0; i < users.length; i++) {
+            if (users[i] != participants[i]) revert UserMismatch();
             scores[users[i]] = points[i];
             if (points[i] > maxScore) {
                 maxScore = points[i];
@@ -164,6 +172,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     error NotJoined();
 
     function finalizeAndDistribute() external nonReentrant {
+        if (emergencyActive) revert EmergencyActiveErr();
         if (!scoresSubmitted) revert ScoresNotSubmitted();
         if (finalized) revert AlreadyFinalized();
 
@@ -191,6 +200,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     }
 
     function claimPrize() external nonReentrant {
+        if (emergencyActive) revert EmergencyActiveErr();
         if (!finalized) revert ScoresNotSubmitted();
         if (msg.sender != winner) revert NotWinner();
         if (prizeClaimed) revert AlreadyClaimed();
@@ -199,16 +209,71 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         emit PrizeClaimed(winner, prizeAmount);
     }
 
+    // ------------------------------------------------------------------ //
+    // Emergency path — used when the oracle never submits scores.        //
+    // Anyone can call triggerEmergency() after endTime + 30 days while   //
+    // scores have not been submitted; this pulls all funds from Aave     //
+    // and unblocks per-user emergencyUserWithdraw() refunds.             //
+    // The owner can sweep any residual (seed + unclaimed deposits) after //
+    // endTime + 60 days — gives joiners a 30-day claim window.           //
+    // ------------------------------------------------------------------ //
+
+    bool public emergencyActive;
+    mapping(address => bool) public emergencyWithdrawn;
+
+    event EmergencyTriggered(address indexed by, uint256 timestamp);
+    event EmergencyUserWithdrawn(address indexed user, uint256 amount);
     event EmergencyWithdraw(address indexed admin, uint256 amount);
+
+    error EmergencyAlreadyActive();
+    error EmergencyNotElapsed();
+    error EmergencyActiveErr();
+    error EmergencyNotActive();
+    error AlreadyEmergencyWithdrawn();
     error HasParticipants();
     error TooEarly();
 
-    function emergencyAdminWithdraw() external onlyOwner nonReentrant {
-        if (block.timestamp < endTime + 7 days) revert TooEarly();
-        if (participants.length > 0) revert HasParticipants();
+    function triggerEmergency() external nonReentrant {
+        if (emergencyActive) revert EmergencyAlreadyActive();
+        if (block.timestamp < endTime + EMERGENCY_DELAY) revert EmergencyNotElapsed();
+        if (scoresSubmitted) revert AlreadySubmitted();
+        emergencyActive = true;
         uint256 aBal = aUsdt.balanceOf(address(this));
         if (aBal > 0) {
             aavePool.withdraw(address(usdt), aBal, address(this));
+        }
+        emit EmergencyTriggered(msg.sender, block.timestamp);
+    }
+
+    function emergencyUserWithdraw() external nonReentrant {
+        if (!emergencyActive) revert EmergencyNotActive();
+        if (!hasJoined[msg.sender]) revert NotJoined();
+        if (emergencyWithdrawn[msg.sender]) revert AlreadyEmergencyWithdrawn();
+        emergencyWithdrawn[msg.sender] = true;
+        usdt.safeTransfer(msg.sender, DEPOSIT);
+        emit EmergencyUserWithdrawn(msg.sender, DEPOSIT);
+    }
+
+    function emergencyAdminWithdraw() external onlyOwner nonReentrant {
+        // Allowed in two situations:
+        //  (a) No one joined and 7 days passed since endTime — original case,
+        //      lets the owner reclaim the seed if the tournament drew nobody.
+        //  (b) Emergency mode is active and the 60-day owner-cooldown is up —
+        //      seed + any unclaimed deposits go back to the owner.
+        bool emergencyOwnerWindow =
+            emergencyActive && block.timestamp >= endTime + ADMIN_EMERGENCY_DELAY;
+        if (!emergencyOwnerWindow) {
+            if (block.timestamp < endTime + 7 days) revert TooEarly();
+            if (participants.length > 0) revert HasParticipants();
+        }
+
+        // In the no-joiners path, Aave still holds the seed; pull it.
+        // In emergency mode, triggerEmergency() already pulled.
+        if (!emergencyActive) {
+            uint256 aBal = aUsdt.balanceOf(address(this));
+            if (aBal > 0) {
+                aavePool.withdraw(address(usdt), aBal, address(this));
+            }
         }
         uint256 bal = usdt.balanceOf(address(this));
         usdt.safeTransfer(owner(), bal);
