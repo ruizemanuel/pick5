@@ -20,8 +20,8 @@ async function main() {
   console.log("Balance (CELO):", ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
 
   const now = Math.floor(Date.now() / 1000);
-  const lockTime = now + 5 * 60;       // 5 min from now
-  const endTime  = now + 12 * 60;      // 12 min from now (so 7 min "live" window after lock)
+  const lockTime = now + 10 * 60;      // 10 min from now
+  const endTime  = now + 15 * 60;      // 5 min after lock
 
   console.log("\nDeploying mocks...");
   const Mock = await ethers.getContractFactory("MockUSDT");
