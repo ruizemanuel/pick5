@@ -19,9 +19,14 @@ function getChain(network: string) {
   return celoAlfajores;
 }
 
-export async function GET(_req: NextRequest) {
-  // Allow unauthenticated calls — leaderboard cache is non-authoritative
-  // but reject if no DB
+export async function GET(req: NextRequest) {
+  // Triggered by the GH Actions cron (Bearer CRON_SECRET). The endpoint
+  // does on-chain reads + DB writes, so gate it to prevent DoS even though
+  // the cache it produces is non-authoritative.
+  const authHeader = req.headers.get("authorization");
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new NextResponse("unauthorized", { status: 401 });
+  }
   const db = getDb();
 
   const network = DEFAULT_NETWORK;

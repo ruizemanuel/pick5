@@ -8,5 +8,11 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint"
+  },
+  "pnpm": {
+    "overrides": {
+      "axios": "^1.15.1",
+      "postcss": "^8.5.10"
+    }
   }
 }
