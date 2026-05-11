@@ -1,0 +1,26 @@
+{
+  "type": "Agent",
+  "name": "Pick5 Scout",
+  "description": "AI Coach for Pick5 — analyzes Premier League FPL data and publishes top 5 picks before each matchweek. Picks are committed onchain (commit-reveal) and accuracy is tracked via ERC-8004 reputation.",
+  "image": "https://pick5-beta.vercel.app/opengraph-image",
+  "endpoints": [
+    {
+      "type": "wallet",
+      "address": "0xFb226037b54B8782655B233F2A9590c0cF997f68",
+      "chainId": 42220
+    },
+    {
+      "type": "agent-contract",
+      "address": "0x2cafF9A3c83292e2aB343204079B06FFD60a9046",
+      "chainId": 42220,
+      "description": "CoachAgent contract storing commit-reveal of weekly picks and ERC-8004 accuracy reputation"
+    },
+    {
+      "type": "app",
+      "url": "https://pick5-beta.vercel.app/coach"
+    }
+  ],
+  "supportedTrust": ["reputation"],
+  "tags": ["fantasy", "premier-league", "fpl", "celo", "pick5"],
+  "version": "1.0.0"
+}
