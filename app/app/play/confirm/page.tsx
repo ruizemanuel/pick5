@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { toast } from "sonner";
+import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { PlayerRow } from "@/components/design/PlayerRow";
 import { PrimaryCTA } from "@/components/design/PrimaryCTA";
@@ -228,6 +229,7 @@ export default function ConfirmPage() {
           </p>
         </section>
       </div>
+      <BottomNav />
     </main>
   );
 }

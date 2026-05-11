@@ -1,5 +1,6 @@
 import { createPublicClient, http } from "viem";
 import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { LandingCTA } from "@/components/LandingCTA";
 import { Pitch, type PitchSlot } from "@/components/design/Pitch";
@@ -148,8 +149,9 @@ export default async function LandingPage() {
           </p>
         </section>
 
-        <div className="h-10" />
+        <div className="h-24" />
       </div>
+      <BottomNav />
     </main>
   );
 }

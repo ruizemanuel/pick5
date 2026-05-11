@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { Pitch, type PitchSlot } from "@/components/design/Pitch";
 import { PrimaryCTA } from "@/components/design/PrimaryCTA";
@@ -120,6 +121,8 @@ export default function BuildPage() {
             : undefined
         }
       />
+
+      <BottomNav />
     </main>
   );
 }
