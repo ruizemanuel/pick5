@@ -20,7 +20,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     IERC20  public immutable aUsdt;
     uint256 public immutable lockTime;
     uint256 public immutable endTime;
-    uint256 public constant DEPOSIT = 5_000_000;
+    uint256 public constant DEPOSIT = 1_000_000;
     uint256 public constant MAX_PARTICIPANTS = 500;
     uint256 public constant EMERGENCY_DELAY = 30 days;
     uint256 public constant ADMIN_EMERGENCY_DELAY = 60 days;

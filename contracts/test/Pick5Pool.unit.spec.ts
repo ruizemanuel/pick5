@@ -24,7 +24,7 @@ describe("Pick5Pool — constructor + immutables", () => {
     expect(await pool.aUsdt()).to.equal(fakeAUsdt.address);
     expect(await pool.lockTime()).to.equal(BigInt(lockTime));
     expect(await pool.endTime()).to.equal(BigInt(endTime));
-    expect(await pool.DEPOSIT()).to.equal(5_000_000n);
+    expect(await pool.DEPOSIT()).to.equal(1_000_000n);
   });
 });
 
@@ -94,7 +94,7 @@ describe("Pick5Pool — joinTournament", () => {
       .withArgs(alice.address, lineup, 0);
 
     expect(await pool.hasJoined(alice.address)).to.equal(true);
-    expect(await aUsdt.balanceOf(await pool.getAddress())).to.equal(5_000_000n);
+    expect(await aUsdt.balanceOf(await pool.getAddress())).to.equal(1_000_000n);
     const stored = await pool.getLineup(alice.address);
     expect(stored.map((x) => Number(x))).to.deep.equal(lineup);
     expect(await pool.participantsLength()).to.equal(1n);
@@ -250,9 +250,9 @@ describe("Pick5Pool — finalize + claim + withdraw", () => {
     await expect(pool.connect(alice).finalizeAndDistribute())
       .to.emit(pool, "Finalized");
 
-    // total deposits = 10 (seed) + 5 (alice) + 5 (bob) = 20 USDT
-    // total redeemed (with yield) = 21 USDT
-    // prizeAmount = 21 - 5 - 5 = 11 USDT (seed + yield go to winner)
+    // total in pool = 10 (seed) + 1 (alice) + 1 (bob) + 1 (yield) = 13 USDT
+    // totalDeposits = DEPOSIT * 2 = 2 USDT
+    // prizeAmount = 13 - 2 = 11 USDT (seed + yield go to winner)
     expect(await pool.prizeAmount()).to.equal(11_000_000n);
 
     // bob (winner) claims
@@ -263,12 +263,12 @@ describe("Pick5Pool — finalize + claim + withdraw", () => {
     // alice withdraws deposit
     const aliceBefore = await usdt.balanceOf(alice.address);
     await pool.connect(alice).withdrawDeposit();
-    expect((await usdt.balanceOf(alice.address)) - aliceBefore).to.equal(5_000_000n);
+    expect((await usdt.balanceOf(alice.address)) - aliceBefore).to.equal(1_000_000n);
 
     // bob also withdraws deposit
     const bobBefore2 = await usdt.balanceOf(bob.address);
     await pool.connect(bob).withdrawDeposit();
-    expect((await usdt.balanceOf(bob.address)) - bobBefore2).to.equal(5_000_000n);
+    expect((await usdt.balanceOf(bob.address)) - bobBefore2).to.equal(1_000_000n);
   });
 
   it("non-winner cannot claim", async () => {

@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
-const DEPOSIT = 5_000_000n;
+const DEPOSIT = 1_000_000n;
 const SEED = 10_000_000n;
 
 async function deployFixture() {

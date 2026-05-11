@@ -64,8 +64,8 @@ describe("Pick5Pool — Aave V3 Celo mainnet fork integration", function () {
 
     expect(await pool.hasJoined(alice.address)).to.equal(true);
     const aUsdtAfterAlice = await aUsdt.balanceOf(poolAddr);
-    // 10 USDT seed + 5 USDT from Alice => at least 14.9 USDT in aUSDT
-    expect(aUsdtAfterAlice).to.be.greaterThanOrEqual(14_900_000n);
+    // 10 USDT seed + 1 USDT from Alice (DEPOSIT) => at least 10.9 USDT in aUSDT
+    expect(aUsdtAfterAlice).to.be.greaterThanOrEqual(10_900_000n);
 
     // ── Bob joins ──────────────────────────────────────────────────────────────
     await usdt.connect(bob).approve(poolAddr, 5_000_000n);
@@ -74,8 +74,8 @@ describe("Pick5Pool — Aave V3 Celo mainnet fork integration", function () {
     expect(await pool.hasJoined(bob.address)).to.equal(true);
     expect(await pool.participantsLength()).to.equal(2n);
 
-    // Final aUSDT balance: 10 + 5 + 5 = 20 USDT; allow >= 99%
+    // Final aUSDT balance: 10 + 1 + 1 = 12 USDT; allow >= 99%
     const aUsdtFinal = await aUsdt.balanceOf(poolAddr);
-    expect(aUsdtFinal).to.be.greaterThanOrEqual(19_800_000n);
+    expect(aUsdtFinal).to.be.greaterThanOrEqual(11_900_000n);
   });
 });
