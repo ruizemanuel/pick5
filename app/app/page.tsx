@@ -1,7 +1,41 @@
+import { createPublicClient, http } from "viem";
+import { celo, celoAlfajores, celoSepolia } from "viem/chains";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { LandingCTA } from "@/components/LandingCTA";
 import { Pitch, type PitchSlot } from "@/components/design/Pitch";
 import { Stat } from "@/components/design/Stat";
+import { pick5PoolAbi } from "@/lib/contracts/abi";
+import { poolAddress, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
+
+export const revalidate = 60; // refresh on-chain stats once per minute
+
+function getChain(network: string) {
+  if (network === "celo") return celo;
+  if (network === "celo-sepolia") return celoSepolia;
+  return celoAlfajores;
+}
+
+async function readPoolStats() {
+  const pool = poolAddress(DEFAULT_NETWORK);
+  if (pool === "0x0000000000000000000000000000000000000000") {
+    return { players: 0, poolUsd: 0, prizeUsd: 0 };
+  }
+  const client = createPublicClient({ chain: getChain(DEFAULT_NETWORK), transport: http() });
+  try {
+    const [deposit, seedAmount, participants] = await Promise.all([
+      client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "DEPOSIT" }) as Promise<bigint>,
+      client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "seedAmount" }) as Promise<bigint>,
+      client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "participantsLength" }) as Promise<bigint>,
+    ]);
+    const players = Number(participants);
+    const poolTotal = seedAmount + deposit * participants;
+    const poolUsd = Number(poolTotal) / 1_000_000;
+    const prizeUsd = Number(seedAmount) / 1_000_000;
+    return { players, poolUsd, prizeUsd };
+  } catch {
+    return { players: 0, poolUsd: 0, prizeUsd: 0 };
+  }
+}
 
 const FPL_PHOTO = (code: number) =>
   `https://resources.premierleague.com/premierleague/photos/players/250x250/p${code}.png`;
@@ -56,8 +90,10 @@ function daysUntil(target: Date): number {
   return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
   const days = daysUntil(LOCK_DATE);
+  const { players, poolUsd, prizeUsd } = await readPoolStats();
+  const fmt = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
 
   return (
     <main className="min-h-dvh bg-[#08070D] text-white">
@@ -91,8 +127,12 @@ export default function LandingPage() {
 
         <section className="pt-5">
           <div className="grid grid-cols-3 gap-2">
-            <Stat label="Pool" value="$25" sub="5 players" />
-            <Stat label="Prize" value="$10" sub="seed + yield" highlight />
+            <Stat
+              label="Pool"
+              value={fmt(poolUsd)}
+              sub={`${players} player${players === 1 ? "" : "s"}`}
+            />
+            <Stat label="Prize" value={fmt(prizeUsd)} sub="seed + yield" highlight />
             <Stat
               label="Locks in"
               value={`${days}d`}
