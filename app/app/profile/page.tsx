@@ -54,7 +54,7 @@ export default function ProfilePage() {
       await pool.withdrawDeposit();
       setWithdrawnLocally(true);
       toast.success("Deposit withdrawn");
-      posthog.capture("withdraw_completed", { amount_usdt: 5 });
+      posthog.capture("withdraw_completed", { amount_usdt: 1 });
       await pool.refetchDepositWithdrawn();
     } catch (e) {
       console.error(e);
@@ -86,7 +86,7 @@ export default function ProfilePage() {
     timeline.push({
       label: "Joined tournament",
       status: "done",
-      hint: "$5 USDT staked into Aave V3",
+      hint: "$1 USDT staked into Aave V3",
     });
   } else {
     timeline.push({
@@ -118,8 +118,8 @@ export default function ProfilePage() {
       label: pool.depositWithdrawn ? "Deposit withdrawn" : "Deposit refundable",
       status: pool.depositWithdrawn ? "done" : "available",
       hint: pool.depositWithdrawn
-        ? "$5 USDT returned"
-        : "Tap Withdraw to receive $5",
+        ? "$1 USDT returned"
+        : "Tap Withdraw to receive $1",
     });
   }
 
@@ -199,7 +199,7 @@ export default function ProfilePage() {
             )}
             {showWithdraw && (
               <SecondaryCTA
-                label="Withdraw $5 Deposit"
+                label="Withdraw $1 Deposit"
                 onClick={onWithdraw}
                 loading={withdrawBusy}
               />

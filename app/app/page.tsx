@@ -79,9 +79,9 @@ export default function LandingPage() {
             <span className="text-[#00DF7C]">Lose nothing.</span>
           </h1>
           <p className="mt-3 max-w-[34ch] text-sm text-white/60">
-            Deposit $5 USDT, pick 5 Premier League players for the final 2
+            Deposit $1 USDT, pick 5 Premier League players for the final 2
             matchweeks. Your stake earns yield in Aave V3 — top scorer takes the
-            entire prize pool. Withdraw your $5 anytime after.
+            entire prize pool. Withdraw your $1 anytime after.
           </p>
         </section>
 

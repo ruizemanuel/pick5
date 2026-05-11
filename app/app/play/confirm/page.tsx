@@ -68,7 +68,7 @@ export default function ConfirmPage() {
       router.replace("/play/build" as Route);
       return;
     }
-    if (pool.allowance >= parseUnits("5", 6)) setStep("join");
+    if (pool.allowance >= parseUnits("1", 6)) setStep("join");
   }, [lineup, pool.allowance, router, didJoin]);
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function ConfirmPage() {
     try {
       await pool.approve();
       toast.success("USDT approved");
-      posthog.capture("usdt_approved", { amount_usdt: 5 });
+      posthog.capture("usdt_approved", { amount_usdt: 1 });
       await pool.refetchAllowance();
       setStep("join");
     } catch (e) {
@@ -132,7 +132,7 @@ export default function ConfirmPage() {
       ];
       await pool.join(tuple);
       setDidJoin(true);
-      posthog.capture("deposit_completed", { amount_usdt: 5 });
+      posthog.capture("deposit_completed", { amount_usdt: 1 });
       toast.success("You're in 🎉");
       router.push("/play" as Route);
       void celebrate();
@@ -190,7 +190,7 @@ export default function ConfirmPage() {
                 Total
               </span>
               <span className="font-display text-3xl tracking-tight text-[#F5C842] tabular-nums">
-                $5.00
+                $1.00
               </span>
             </div>
             <p className="mt-1 text-[11px] text-white/40">
@@ -212,7 +212,7 @@ export default function ConfirmPage() {
             </div>
           ) : step === "approve" ? (
             <PrimaryCTA
-              label="Approve · $5 USDT"
+              label="Approve · $1 USDT"
               onClick={onApprove}
               loading={busy}
             />

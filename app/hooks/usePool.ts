@@ -118,7 +118,7 @@ export function usePool() {
         abi: erc20Abi,
         address: usdtAddr,
         functionName: "approve",
-        args: [poolAddr, parseUnits("5", 6)],
+        args: [poolAddr, parseUnits("1", 6)],
       }),
     join: async (lineup: readonly [number, number, number, number, number]) => {
       const hash = await writeAndWait({
