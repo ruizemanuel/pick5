@@ -38,6 +38,11 @@ export const metadata: Metadata = {
     description:
       "Pick 5 Premier League players. Win the pool. Lose nothing.",
   },
+  other: {
+    // Talent App project domain-ownership verification
+    "talentapp:project_verification":
+      "35eedb8130b9842ac1819851a16dcab4169acbb311210fccca6e3b4c7f8dd3f78e04499b246e1ee8f0c877ac092703de7896c1ce4348596fb2e0cadbeee02891",
+  },
 };
 
 export default function RootLayout({
