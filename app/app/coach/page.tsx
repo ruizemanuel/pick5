@@ -10,6 +10,14 @@ import { teamColor as teamColorFor } from "@/lib/fpl/teamColors";
 export const revalidate = 300;
 export const dynamic = "force-dynamic";
 
+// On-chain trust identifiers — registered on Celo mainnet.
+const ERC8004_IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432";
+const COACH_AGENT_ID = process.env.NEXT_PUBLIC_COACH_AGENT_ID ?? "9056";
+const SELF_AGENT_ID = process.env.NEXT_PUBLIC_SELF_AGENT_ID ?? "104";
+const SELF_AGENT_ADDRESS =
+  process.env.NEXT_PUBLIC_SELF_AGENT_ADDRESS ??
+  "0x6AfE4e694613A06cCb6cc22178feDA0E3EE1Cc10";
+
 const FPL_PHOTO = (code: number) =>
   `https://resources.premierleague.com/premierleague/photos/players/250x250/p${code}.png`;
 
@@ -102,10 +110,25 @@ export default async function CoachPage() {
           <div className="mt-4 flex items-stretch gap-2">
             <div className="flex-1 rounded-2xl border border-[#00DF7C]/30 bg-[#00DF7C]/5 px-3 py-2.5">
               <div className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">
-                ERC-8004 ID
+                Onchain identity
               </div>
-              <div className="font-mono text-xs text-white/80">
-                agent://pick5.coach
+              <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono text-xs text-white/80">
+                <a
+                  href={`https://celoscan.io/token/${ERC8004_IDENTITY_REGISTRY}?a=${COACH_AGENT_ID}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-2 hover:text-[#00DF7C] hover:underline"
+                >
+                  ERC-8004 #{COACH_AGENT_ID}
+                </a>
+                <a
+                  href={`https://celoscan.io/address/${SELF_AGENT_ADDRESS}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-2 hover:text-[#00DF7C] hover:underline"
+                >
+                  Self ID #{SELF_AGENT_ID}
+                </a>
               </div>
             </div>
             <div
