@@ -80,9 +80,11 @@ export async function GET(req: NextRequest) {
       mw37Pts += m37.get(id) ?? 0;
       mw38Pts += m38.get(id) ?? 0;
     }
+    // Store lowercase — /api/leaderboard/me normalizes the query param to
+    // lowercase before an exact match, so the cache key must be lowercase too.
     await db
       .insert(leaderboardCache)
-      .values({ wallet: user, mw37Pts, mw38Pts, updatedAt: new Date() })
+      .values({ wallet: user.toLowerCase(), mw37Pts, mw38Pts, updatedAt: new Date() })
       .onConflictDoUpdate({
         target: leaderboardCache.wallet,
         set: { mw37Pts, mw38Pts, updatedAt: new Date() },
