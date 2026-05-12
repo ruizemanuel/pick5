@@ -86,13 +86,16 @@ const PREVIEW_LINEUP: PitchSlot[] = [
 
 const LOCK_DATE = new Date("2026-05-16T14:00:00Z");
 
-function daysUntil(target: Date): number {
-  const ms = target.getTime() - Date.now();
-  return Math.max(0, Math.ceil(ms / 86_400_000));
+function timeUntil(target: Date): string {
+  const ms = Math.max(0, target.getTime() - Date.now());
+  if (ms === 0) return "Locked";
+  const days = Math.floor(ms / 86_400_000);
+  const hours = Math.floor((ms % 86_400_000) / 3_600_000);
+  return `${String(days).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h`;
 }
 
 export default async function LandingPage() {
-  const days = daysUntil(LOCK_DATE);
+  const locksIn = timeUntil(LOCK_DATE);
   const { players, poolUsd, prizeUsd } = await readPoolStats();
   const fmt = (n: number) => (Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`);
 
@@ -136,7 +139,7 @@ export default async function LandingPage() {
             <Stat label="Prize" value={fmt(prizeUsd)} sub="seed + yield" highlight />
             <Stat
               label="Locks in"
-              value={`${days}d`}
+              value={locksIn}
               sub="Sat · 16 May · 14:00 UTC"
             />
           </div>
