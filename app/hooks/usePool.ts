@@ -5,17 +5,29 @@ import { erc20Abi, parseUnits } from "viem";
 import { pick5PoolAbi } from "@/lib/contracts/abi";
 import { ADDRESSES, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
 
+const CHAIN_ID = {
+  celo: 42220,
+  alfajores: 44787,
+  "celo-sepolia": 11142220,
+} as const;
+
 export function usePool() {
   const network = DEFAULT_NETWORK;
   const poolAddr = ADDRESSES[network].pick5Pool as `0x${string}`;
   const usdtAddr = ADDRESSES[network].usdt as `0x${string}`;
+  // Pin every read/write to the network the contracts are actually on, so the
+  // dApp behaves correctly regardless of which chain MetaMask happens to be on.
+  // Writes will prompt the user to switch chains; reads always hit the right RPC.
+  const chainId = CHAIN_ID[network] ?? 42220;
 
-  const { address } = useAccount();
+  const { address, chainId: connectedChainId } = useAccount();
+  const wrongNetwork = Boolean(address) && connectedChainId !== chainId;
   const userEnabled = Boolean(address) && Boolean(poolAddr);
 
   const allowance = useReadContract({
     abi: erc20Abi,
     address: usdtAddr,
+    chainId,
     functionName: "allowance",
     args: address ? [address, poolAddr] : undefined,
     query: { enabled: Boolean(address) && Boolean(usdtAddr) && Boolean(poolAddr) },
@@ -24,6 +36,7 @@ export function usePool() {
   const hasJoined = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
+    chainId,
     functionName: "hasJoined",
     args: address ? [address] : undefined,
     query: { enabled: userEnabled },
@@ -32,6 +45,7 @@ export function usePool() {
   const winner = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
+    chainId,
     functionName: "winner",
     query: { enabled: Boolean(poolAddr) },
   });
@@ -39,6 +53,7 @@ export function usePool() {
   const finalized = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
+    chainId,
     functionName: "finalized",
     query: { enabled: Boolean(poolAddr) },
   });
@@ -46,6 +61,7 @@ export function usePool() {
   const prizeAmount = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
+    chainId,
     functionName: "prizeAmount",
     query: { enabled: Boolean(poolAddr) },
   });
@@ -53,6 +69,7 @@ export function usePool() {
   const prizeClaimed = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
+    chainId,
     functionName: "prizeClaimed",
     query: { enabled: Boolean(poolAddr) },
   });
@@ -60,16 +77,18 @@ export function usePool() {
   const depositWithdrawn = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
+    chainId,
     functionName: "depositWithdrawn",
     args: address ? [address] : undefined,
     query: { enabled: userEnabled },
   });
 
   const { writeContractAsync } = useWriteContract();
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId });
 
   async function writeAndWait(args: Parameters<typeof writeContractAsync>[0]) {
-    const hash = await writeContractAsync(args);
+    // chainId forces wagmi to switch the wallet to the right network first.
+    const hash = await writeContractAsync({ ...args, chainId } as Parameters<typeof writeContractAsync>[0]);
     if (publicClient) {
       await publicClient.waitForTransactionReceipt({ hash });
     }
@@ -105,6 +124,8 @@ export function usePool() {
 
   return {
     addresses: { pool: poolAddr, usdt: usdtAddr },
+    chainId,
+    wrongNetwork,
     allowance: (allowance.data as bigint | undefined) ?? BigInt(0),
     hasJoined: Boolean(hasJoined.data),
     winner: winnerAddr,

@@ -5,7 +5,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { parseUnits } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
@@ -54,6 +54,7 @@ async function celebrate() {
 export default function ConfirmPage() {
   const router = useRouter();
   const { isConnected } = useAccount();
+  const { switchChain, isPending: switchPending } = useSwitchChain();
   const { lineup, clear } = useLineupDraft();
   const pool = usePool();
   const [step, setStep] = useState<"approve" | "join">("approve");
@@ -201,7 +202,19 @@ export default function ConfirmPage() {
         </section>
 
         <section className="pt-5">
-          {pool.hasJoined ? (
+          {pool.wrongNetwork ? (
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-[#F5C842]/30 bg-[#F5C842]/5 p-4 text-center text-sm text-[#F5C842]">
+                Your wallet is on the wrong network. Pick5 runs on Celo
+                {pool.chainId === 42220 ? " mainnet" : ` (chain ${pool.chainId})`}.
+              </div>
+              <PrimaryCTA
+                label="Switch to Celo"
+                onClick={() => switchChain({ chainId: pool.chainId })}
+                loading={switchPending}
+              />
+            </div>
+          ) : pool.hasJoined ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70">
               You already joined this tournament.
               <Link
