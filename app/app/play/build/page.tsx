@@ -63,7 +63,7 @@ export default function BuildPage() {
 
   return (
     <main className="min-h-dvh bg-[#08070D] text-white">
-      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-10">
+      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
         <header className="flex items-center justify-between">
           <span className="font-display text-2xl tracking-[0.2em] text-white">
             PICK<span className="text-[#00DF7C]">5</span>
