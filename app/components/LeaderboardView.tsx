@@ -61,6 +61,8 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
     [rows],
   );
 
+  const preKickoff = ranked.length > 0 && ranked.every((r) => r.total === 0);
+
   if (ranked.length === 0) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
@@ -78,11 +80,21 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
 
   return (
     <>
+      {preKickoff && (
+        <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">
+            Awaiting kick-off
+          </div>
+          <div className="mt-1 text-xs text-white/60">
+            MW37 starts Sat 16 May · 14:00 UTC. Standings update after the first matchweek settles.
+          </div>
+        </div>
+      )}
       <ol className="space-y-1.5">
         {ranked.map((r) => {
           const isMe = me && r.wallet.toLowerCase() === me;
           const tier =
-            r.displayRank === 1 || r.displayRank === 2 || r.displayRank === 3
+            !preKickoff && (r.displayRank === 1 || r.displayRank === 2 || r.displayRank === 3)
               ? TIERS[r.displayRank as 1 | 2 | 3]
               : null;
           const baseCls = tier
@@ -98,10 +110,10 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   className={`font-display w-9 shrink-0 text-xl tabular-nums ${
-                    tier ? tier.rankColor : "text-white/60"
+                    tier ? tier.rankColor : "text-white/40"
                   }`}
                 >
-                  {r.displayRank}
+                  {preKickoff ? "—" : r.displayRank}
                 </span>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -124,7 +136,11 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-display text-lg tabular-nums text-white">
+                <div
+                  className={`font-display text-lg tabular-nums ${
+                    preKickoff ? "text-white/40" : "text-white"
+                  }`}
+                >
                   {r.total}
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-white/40">
@@ -136,7 +152,7 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
         })}
       </ol>
 
-      {showSelfBanner && myRow && (
+      {showSelfBanner && myRow && !preKickoff && (
         <div className="sticky bottom-20 z-30 mt-4">
           <div className="rounded-2xl border border-[#00DF7C]/40 bg-[#0F0E14]/95 px-4 py-3 backdrop-blur shadow-[0_8px_32px_rgba(0,223,124,0.18)]">
             <div className="flex items-center justify-between gap-3">

@@ -307,7 +307,7 @@ export default async function LandingPage() {
                   <span className="lp-dossier-live-txt">LIVE</span>
                 </div>
                 <div className="lp-dossier-ref">POOL</div>
-                <div className="lp-dossier-label">CURRENT · BALANCE</div>
+                <div className="lp-dossier-label">CURRENT BALANCE</div>
                 <div className="lp-dossier-value">
                   {fmt(poolUsd)}
                   <span className="lp-dossier-unit">USDT</span>
