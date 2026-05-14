@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Inter_Tight } from "next/font/google";
+import {
+  Anton,
+  Barlow_Condensed,
+  Bebas_Neue,
+  Big_Shoulders,
+  Inter_Tight,
+  JetBrains_Mono,
+} from "next/font/google";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -13,6 +20,30 @@ const bebas = Bebas_Neue({
 const inter = Inter_Tight({
   subsets: ["latin"],
   variable: "--font-body",
+});
+
+const anton = Anton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-anton",
+});
+
+const bigShoulders = Big_Shoulders({
+  weight: ["700", "800", "900"],
+  subsets: ["latin"],
+  variable: "--font-shoulders",
+});
+
+const barlow = Barlow_Condensed({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-barlow",
+});
+
+const jetbrains = JetBrains_Mono({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--font-mono-jb",
 });
 
 export const metadata: Metadata = {
@@ -53,7 +84,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bebas.variable} ${inter.variable} h-full antialiased`}
+      className={`${bebas.variable} ${inter.variable} ${anton.variable} ${bigShoulders.variable} ${barlow.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="bg-[#08070D] text-white min-h-full flex flex-col font-sans">
         <Providers>
