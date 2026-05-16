@@ -5,8 +5,10 @@ on:
     # Coach publishes picks
     - cron: "0 12 14 5 *"   # MW37 publish — 14 May 12:00 UTC
     - cron: "0 12 21 5 *"   # MW38 publish — 21 May 12:00 UTC
-    # Coach reveals picks
-    - cron: "0 23 18 5 *"   # MW37 reveal — 18 May 23:00 UTC
+    # Coach reveals picks — MW37 runs Fri 15 → Tue 19 May, so reveal must
+    # wait until after FPL settles it (~Wed 20). Two attempts for robustness.
+    - cron: "0 12 20 5 *"   # MW37 reveal — 20 May 12:00 UTC
+    - cron: "0 20 20 5 *"   # MW37 reveal retry — 20 May 20:00 UTC
     - cron: "0 8 25 5 *"    # MW38 reveal — 25 May 08:00 UTC
     # Oracle finalize + retry
     - cron: "0 22 24 5 *"   # finalize MW38 — 24 May 22:00 UTC
@@ -35,7 +37,8 @@ jobs:
             case "${{ github.event.schedule }}" in
               "0 12 14 5 *") URL="/api/coach/publish-picks?mw=37" ;;
               "0 12 21 5 *") URL="/api/coach/publish-picks?mw=38" ;;
-              "0 23 18 5 *") URL="/api/coach/reveal?mw=37" ;;
+              "0 12 20 5 *") URL="/api/coach/reveal?mw=37" ;;
+              "0 20 20 5 *") URL="/api/coach/reveal?mw=37" ;;
               "0 8 25 5 *")  URL="/api/coach/reveal?mw=38" ;;
               "0 22 24 5 *") URL="/api/oracle/finalize-mw?mw=38" ;;
               "0 12 25 5 *") URL="/api/oracle/retry?mw=38" ;;
