@@ -4,7 +4,7 @@ import { celo, celoAlfajores, celoSepolia } from "viem/chains";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { leaderboardCache } from "@/lib/db/schema";
-import { getLive, isMwSettled } from "@/lib/fpl/client";
+import { getLive } from "@/lib/fpl/client";
 import { liveToMap } from "@/lib/fpl/scoring";
 import { pick5PoolAbi } from "@/lib/contracts/abi";
 import { poolAddress, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
@@ -48,11 +48,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, users: 0 });
   }
 
-  const settled37 = await isMwSettled(37).catch(() => false);
-  const settled38 = await isMwSettled(38).catch(() => false);
-
-  const m37 = settled37 ? liveToMap(await getLive(37)) : new Map<number, number>();
-  const m38 = settled38 ? liveToMap(await getLive(38)) : new Map<number, number>();
+  // FPL exposes provisional ("live") points while fixtures are in progress, so
+  // we always read the live feed — the leaderboard tracks standings as matches
+  // play out rather than freezing at 0 until the matchweek fully settles.
+  // Bonus (BPS) is provisional mid-match and firms up once FPL finalizes it;
+  // that's an acceptable tradeoff for a live board. getLive(38) returns zeros
+  // until MW38 actually starts.
+  const m37 = liveToMap(await getLive(37).catch(() => ({ elements: [] })));
+  const m38 = liveToMap(await getLive(38).catch(() => ({ elements: [] })));
 
   type Lineup = readonly [bigint, bigint, bigint, bigint, bigint];
   const lineups: Record<string, Lineup> = {};
@@ -72,6 +75,7 @@ export async function GET(req: NextRequest) {
     lineups[u] = lin;
   }
 
+  let maxTotal = 0;
   for (const [user, lineup] of Object.entries(lineups)) {
     let mw37Pts = 0;
     let mw38Pts = 0;
@@ -80,6 +84,7 @@ export async function GET(req: NextRequest) {
       mw37Pts += m37.get(id) ?? 0;
       mw38Pts += m38.get(id) ?? 0;
     }
+    maxTotal = Math.max(maxTotal, mw37Pts + mw38Pts);
     // Store lowercase — /api/leaderboard/me normalizes the query param to
     // lowercase before an exact match, so the cache key must be lowercase too.
     await db
@@ -91,16 +96,27 @@ export async function GET(req: NextRequest) {
       });
   }
 
-  // Recompute ranks via window function
-  await db.execute(sql`
-    UPDATE leaderboard_cache lc
-    SET rank = sub.rank
-    FROM (
-      SELECT wallet, RANK() OVER (ORDER BY (mw37_pts + mw38_pts) DESC) AS rank
-      FROM leaderboard_cache
-    ) sub
-    WHERE lc.wallet = sub.wallet
-  `);
+  // Recompute ranks via window function — but only once there are real points
+  // on the board. While every wallet is still at 0, RANK() ties them all at
+  // #1, which surfaces a misleading "#1 of all players" in the UI; keep rank
+  // NULL until standings have actually differentiated.
+  if (maxTotal > 0) {
+    await db.execute(sql`
+      UPDATE leaderboard_cache lc
+      SET rank = sub.rank
+      FROM (
+        SELECT wallet, RANK() OVER (ORDER BY (mw37_pts + mw38_pts) DESC) AS rank
+        FROM leaderboard_cache
+      ) sub
+      WHERE lc.wallet = sub.wallet
+    `);
+  } else {
+    await db.execute(sql`UPDATE leaderboard_cache SET rank = NULL`);
+  }
 
-  return NextResponse.json({ ok: true, users: Object.keys(lineups).length });
+  return NextResponse.json({
+    ok: true,
+    users: Object.keys(lineups).length,
+    ranked: maxTotal > 0,
+  });
 }

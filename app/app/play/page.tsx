@@ -155,8 +155,17 @@ export default function MyTeamPage() {
     return ids.reduce((sum, id) => sum + (live.stats[id]?.points ?? 0), 0);
   }, [live, ids]);
 
-  const totalScore = me?.total ?? currentMwPoints;
-  const rankLabel = me?.rank ? `#${me.rank}` : "—";
+  // `me.total` is the cron-cached, post-settlement total — it stays 0 while a
+  // matchweek is still mid-flight, so `?? ` would never fall through (0 is a
+  // valid value). During a live MW use the FPL live feed instead.
+  const cachedTotal = me?.total ?? 0;
+  const totalScore = cachedTotal > 0 ? cachedTotal : currentMwPoints;
+
+  // The cache ranks every wallet #1 while all totals are 0 (RANK() over a flat
+  // table ties them). Only treat the rank as real once standings have actually
+  // differentiated: the user has cached points, or sits below #1.
+  const showRank = me?.rank != null && (cachedTotal > 0 || me.rank > 1);
+  const rankLabel = showRank ? `#${me!.rank}` : "—";
 
   if (!isConnected) {
     return (
@@ -266,7 +275,7 @@ export default function MyTeamPage() {
                 <Stat
                   label="Rank"
                   value={rankLabel}
-                  sub={me?.rank ? "of all players" : "after first MW"}
+                  sub={showRank ? "of all players" : "after first MW"}
                 />
                 <Stat label={statusLabel} value={statusValue} sub="Sat 16 May" />
               </div>
