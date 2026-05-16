@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createPublicClient, http } from "viem";
 import { celo, celoAlfajores, celoSepolia } from "viem/chains";
 import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
+import { DesktopTicketCTA } from "@/components/DesktopTicketCTA";
 import { LandingCTA } from "@/components/LandingCTA";
 import { Pitch, type PitchSlot } from "@/components/design/Pitch";
 import { Stat } from "@/components/design/Stat";
@@ -291,14 +291,7 @@ export default async function LandingPage() {
                 <b>{fmt(prizeUsd)} seed</b>. Everyone else gets their dollar back when the
                 whistle blows.
               </p>
-              <Link href="/play/build" className="lp-ticket-cta lp-anim lp-anim-d7">
-                <span className="lp-cta-stub">
-                  ADMIT
-                  <br />
-                  <b>ONE · $1</b>
-                </span>
-                <span className="lp-cta-body">KICK OFF</span>
-              </Link>
+              <DesktopTicketCTA />
             </div>
 
             <div className="lp-anim lp-anim-d4">
