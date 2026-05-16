@@ -275,7 +275,7 @@ export default function MyTeamPage() {
                 <Stat
                   label="Rank"
                   value={rankLabel}
-                  sub={showRank ? "of all players" : "after first MW"}
+                  sub={showRank ? "of all players" : "after first points"}
                 />
                 <Stat label={statusLabel} value={statusValue} sub="Sat 16 May" />
               </div>

@@ -83,10 +83,10 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
       {preKickoff && (
         <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
           <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">
-            Awaiting kick-off
+            Awaiting first points
           </div>
           <div className="mt-1 text-xs text-white/60">
-            MW37 starts Sat 16 May · 14:00 UTC. Standings update after the first matchweek settles.
+            Rankings appear here once players in the pool start scoring in MW37.
           </div>
         </div>
       )}
