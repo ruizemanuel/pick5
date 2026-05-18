@@ -202,7 +202,28 @@ export default function ConfirmPage() {
         </section>
 
         <section className="pt-5">
-          {pool.wrongNetwork ? (
+          {pool.hasJoined ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70">
+              You already joined this tournament.
+              <Link
+                href={"/play" as Route}
+                className="ml-1 text-[#00DF7C] underline-offset-4 hover:underline"
+              >
+                Go to your team →
+              </Link>
+            </div>
+          ) : pool.isLocked ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70">
+              Entries closed — the tournament locked on 16 May. New lineups can
+              no longer be submitted.
+              <Link
+                href={"/leaderboard" as Route}
+                className="ml-1 text-[#00DF7C] underline-offset-4 hover:underline"
+              >
+                See the standings →
+              </Link>
+            </div>
+          ) : pool.wrongNetwork ? (
             <div className="space-y-3">
               <div className="rounded-2xl border border-[#F5C842]/30 bg-[#F5C842]/5 p-4 text-center text-sm text-[#F5C842]">
                 Your wallet is on the wrong network. Pick5 runs on Celo
@@ -213,16 +234,6 @@ export default function ConfirmPage() {
                 onClick={() => switchChain({ chainId: pool.chainId })}
                 loading={switchPending}
               />
-            </div>
-          ) : pool.hasJoined ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70">
-              You already joined this tournament.
-              <Link
-                href={"/play" as Route}
-                className="ml-1 text-[#00DF7C] underline-offset-4 hover:underline"
-              >
-                Go to your team →
-              </Link>
             </div>
           ) : step === "approve" ? (
             <PrimaryCTA

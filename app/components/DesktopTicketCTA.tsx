@@ -24,6 +24,10 @@ export function DesktopTicketCTA() {
   } else if (isConnected && pool.hasJoined) {
     href = "/play" as Route;
     label = "VIEW TEAM";
+  } else if (pool.isLocked) {
+    // Entries are closed once the pool locks — point at the live standings.
+    href = "/leaderboard" as Route;
+    label = "SEE STANDINGS";
   }
 
   return (

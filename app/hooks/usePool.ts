@@ -42,6 +42,14 @@ export function usePool() {
     query: { enabled: userEnabled },
   });
 
+  const lockTime = useReadContract({
+    abi: pick5PoolAbi,
+    address: poolAddr,
+    chainId,
+    functionName: "lockTime",
+    query: { enabled: Boolean(poolAddr) },
+  });
+
   const winner = useReadContract({
     abi: pick5PoolAbi,
     address: poolAddr,
@@ -122,12 +130,20 @@ export function usePool() {
   const isWinner =
     !!address && !!winnerAddr && winnerAddr.toLowerCase() === address.toLowerCase();
 
+  // `joinTournament` reverts with TournamentLocked() once block.timestamp
+  // reaches lockTime — read it on-chain so the join funnel can close itself
+  // instead of letting users build a lineup the contract will reject.
+  const lockTimeSec = lockTime.data as bigint | undefined;
+  const isLocked =
+    lockTimeSec !== undefined && Date.now() >= Number(lockTimeSec) * 1000;
+
   return {
     addresses: { pool: poolAddr, usdt: usdtAddr },
     chainId,
     wrongNetwork,
     allowance: (allowance.data as bigint | undefined) ?? BigInt(0),
     hasJoined: Boolean(hasJoined.data),
+    isLocked,
     winner: winnerAddr,
     isWinner,
     isFinalized: Boolean(finalized.data),
