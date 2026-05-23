@@ -1,3 +1,5 @@
+import Link from "next/link";
+import type { Route } from "next";
 import { createPublicClient, http } from "viem";
 import { celo, celoAlfajores, celoSepolia } from "viem/chains";
 import { BottomNav } from "@/components/BottomNav";
@@ -159,6 +161,21 @@ export default async function LandingPage() {
           <LandingCTA />
           <p className="mt-3 text-center text-[11px] text-white/40">
             Built on Celo · ERC-8004 verified Coach
+          </p>
+          <p className="mt-1.5 text-center text-[10px] text-white/30">
+            <Link
+              href={"/terms" as Route}
+              className="underline-offset-2 hover:text-white/60 hover:underline"
+            >
+              Terms
+            </Link>
+            <span className="mx-2">·</span>
+            <Link
+              href={"/privacy" as Route}
+              className="underline-offset-2 hover:text-white/60 hover:underline"
+            >
+              Privacy
+            </Link>
           </p>
         </section>
 

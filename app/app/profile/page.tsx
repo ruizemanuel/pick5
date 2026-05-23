@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import type { Route } from "next";
 import { useAccount } from "wagmi";
 import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
@@ -212,6 +214,26 @@ export default function ProfilePage() {
             Withdraw available once the tournament settles after MW38.
           </p>
         )}
+
+        <section className="pt-8">
+          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/50">
+            Legal
+          </div>
+          <div className="mt-2 flex flex-col gap-1.5">
+            <Link
+              href={"/terms" as Route}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/75 transition hover:bg-white/5"
+            >
+              Terms of Service →
+            </Link>
+            <Link
+              href={"/privacy" as Route}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/75 transition hover:bg-white/5"
+            >
+              Privacy Policy →
+            </Link>
+          </div>
+        </section>
       </div>
       <BottomNav />
     </main>
