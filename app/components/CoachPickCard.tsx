@@ -40,11 +40,15 @@ export function CoachPickCard({ row }: { row: CoachPickRow }) {
           <span className="font-display text-3xl leading-none text-white tabular-nums">
             {row.mw}
           </span>
+          {/* Reveal status indicator. Uses the gold accent (matches the
+              "X% ACCURATE" badge on the right) instead of the primary green,
+              so it doesn't read as "this matchweek is currently active"
+              after the tournament has settled. */}
           <span
             className={
               "ml-1 size-1.5 rounded-full " +
               (revealed
-                ? "bg-[#00DF7C] shadow-[0_0_6px_#00DF7C]"
+                ? "bg-[#F5C842] shadow-[0_0_6px_#F5C842]"
                 : "bg-white/30")
             }
             aria-label={revealed ? "Revealed" : "Pending reveal"}
