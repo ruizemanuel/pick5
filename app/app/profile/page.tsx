@@ -28,11 +28,15 @@ export default function ProfilePage() {
   const pool = usePool();
   const [claimBusy, setClaimBusy] = useState(false);
   const [withdrawBusy, setWithdrawBusy] = useState(false);
-  // Local guards: hide the CTAs immediately after a successful tx so a
-  // late chain-refetch (wagmi can lag a tick) can't leave the button
-  // visible+enabled and trigger a second tx that reverts AlreadyClaimed.
+  // Local guards: reflect a successful tx immediately so a late chain-refetch
+  // (wagmi + Celo RPC nodes can lag a tick after a write) doesn't (a) leave
+  // a CTA visible+enabled and trigger a second tx that reverts AlreadyClaimed,
+  // or (b) leave the timeline entry stuck on the pre-tx label until the user
+  // refreshes the page.
   const [claimedLocally, setClaimedLocally] = useState(false);
   const [withdrawnLocally, setWithdrawnLocally] = useState(false);
+  const claimed = pool.prizeClaimed || claimedLocally;
+  const withdrawn = pool.depositWithdrawn || withdrawnLocally;
 
   async function onClaim() {
     setClaimBusy(true);
@@ -108,30 +112,21 @@ export default function ProfilePage() {
   }
   if (pool.isWinner) {
     timeline.push({
-      label: pool.prizeClaimed ? "Prize claimed" : "Prize unclaimed",
-      status: pool.prizeClaimed ? "done" : "available",
-      hint: pool.prizeClaimed
-        ? "Winnings sent to wallet"
-        : "Tap Claim to receive",
+      label: claimed ? "Prize claimed" : "Prize unclaimed",
+      status: claimed ? "done" : "available",
+      hint: claimed ? "Winnings sent to wallet" : "Tap Claim to receive",
     });
   }
   if (pool.hasJoined && pool.isFinalized) {
     timeline.push({
-      label: pool.depositWithdrawn ? "Deposit withdrawn" : "Deposit refundable",
-      status: pool.depositWithdrawn ? "done" : "available",
-      hint: pool.depositWithdrawn
-        ? "$1 USDT returned"
-        : "Tap Withdraw to receive $1",
+      label: withdrawn ? "Deposit withdrawn" : "Deposit refundable",
+      status: withdrawn ? "done" : "available",
+      hint: withdrawn ? "$1 USDT returned" : "Tap Withdraw to receive $1",
     });
   }
 
-  const showClaim =
-    pool.isWinner && pool.isFinalized && !pool.prizeClaimed && !claimedLocally;
-  const showWithdraw =
-    pool.hasJoined &&
-    pool.isFinalized &&
-    !pool.depositWithdrawn &&
-    !withdrawnLocally;
+  const showClaim = pool.isWinner && pool.isFinalized && !claimed;
+  const showWithdraw = pool.hasJoined && pool.isFinalized && !withdrawn;
 
   return (
     <main className="min-h-dvh bg-[#08070D] text-white">
