@@ -38,24 +38,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, reason: `pool not configured for ${network}` });
   }
 
-  const numParticipants = (await client.readContract({
-    address: poolAddr,
-    abi: pick5PoolAbi,
-    functionName: "participantsLength",
-  })) as bigint;
+  const [numParticipants, scoresSubmittedOnChain] = await Promise.all([
+    client.readContract({
+      address: poolAddr,
+      abi: pick5PoolAbi,
+      functionName: "participantsLength",
+    }) as Promise<bigint>,
+    client.readContract({
+      address: poolAddr,
+      abi: pick5PoolAbi,
+      functionName: "scoresSubmitted",
+    }) as Promise<boolean>,
+  ]);
 
   if (numParticipants === BigInt(0)) {
     return NextResponse.json({ ok: true, users: 0 });
   }
 
-  // FPL exposes provisional ("live") points while fixtures are in progress, so
-  // we always read the live feed — the leaderboard tracks standings as matches
-  // play out rather than freezing at 0 until the matchweek fully settles.
-  // Bonus (BPS) is provisional mid-match and firms up once FPL finalizes it;
-  // that's an acceptable tradeoff for a live board. getLive(38) returns zeros
-  // until MW38 actually starts.
-  const m37 = liveToMap(await getLive(37).catch(() => ({ elements: [] })));
-  const m38 = liveToMap(await getLive(38).catch(() => ({ elements: [] })));
+  // Two scoring sources:
+  //   pre-submitScores: live FPL feed — leaderboard tracks standings as
+  //     fixtures play out. Bonus is provisional, firms up at settle.
+  //   post-submitScores: on-chain `scores[wallet]` — immutable per-user total
+  //     written by the oracle. We switch to this once the contract has the
+  //     authoritative scores because FPL eventually purges/drifts old MW data
+  //     between seasons; without this guard, the next daily recompute would
+  //     overwrite the cache with stale zeros (which happened in V1: the May 25
+  //     04:18 UTC run zeroed the MW38 winner's MW37 column after FPL had
+  //     started purging it).
+  const m37 = scoresSubmittedOnChain
+    ? new Map<number, number>()
+    : liveToMap(await getLive(37).catch(() => ({ elements: [] })));
+  const m38 = scoresSubmittedOnChain
+    ? new Map<number, number>()
+    : liveToMap(await getLive(38).catch(() => ({ elements: [] })));
 
   type Lineup = readonly [bigint, bigint, bigint, bigint, bigint];
   const lineups: Record<string, Lineup> = {};
@@ -79,10 +94,24 @@ export async function GET(req: NextRequest) {
   for (const [user, lineup] of Object.entries(lineups)) {
     let mw37Pts = 0;
     let mw38Pts = 0;
-    for (const idBn of lineup) {
-      const id = Number(idBn);
-      mw37Pts += m37.get(id) ?? 0;
-      mw38Pts += m38.get(id) ?? 0;
+    if (scoresSubmittedOnChain) {
+      // Read the immutable on-chain total. The contract only stores totals,
+      // not per-MW splits, so we collapse the whole score into mw38Pts (the
+      // active MW at the time of submit) and leave mw37Pts at 0. Nothing in
+      // the UI displays the mw37/mw38 split — only `total` is rendered.
+      const onChainScore = (await client.readContract({
+        address: poolAddr,
+        abi: pick5PoolAbi,
+        functionName: "scores",
+        args: [user as `0x${string}`],
+      })) as bigint;
+      mw38Pts = Number(onChainScore);
+    } else {
+      for (const idBn of lineup) {
+        const id = Number(idBn);
+        mw37Pts += m37.get(id) ?? 0;
+        mw38Pts += m38.get(id) ?? 0;
+      }
     }
     maxTotal = Math.max(maxTotal, mw37Pts + mw38Pts);
     // Store lowercase — /api/leaderboard/me normalizes the query param to
@@ -118,5 +147,6 @@ export async function GET(req: NextRequest) {
     ok: true,
     users: Object.keys(lineups).length,
     ranked: maxTotal > 0,
+    source: scoresSubmittedOnChain ? "onchain" : "fpl-live",
   });
 }
