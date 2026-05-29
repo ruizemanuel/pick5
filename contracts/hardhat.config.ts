@@ -19,7 +19,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: "https://forno.celo.org",
-        blockNumber: undefined,
+        // Pinned for deterministic Aave fork tests. forno prunes state for
+        // unpinned `latest` within seconds → intermittent "historical state not
+        // available". Bump this if forno stops serving state for this block.
+        blockNumber: 68196393,
       },
       chainId: 31337,
     },
