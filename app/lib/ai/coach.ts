@@ -65,5 +65,11 @@ Output the 5 best picks with their playerId, playerName, and a 1-2 sentence reas
   // Validate distinct IDs
   const ids = new Set(result.object.picks.map((p) => p.playerId));
   if (ids.size !== 5) throw new Error("LLM returned duplicate player IDs");
+  // Enforce X.1: the prompt asks for available players, but we must guarantee it.
+  // A hallucinated id for an injured/suspended player would otherwise be committed
+  // on-chain. Any pick outside the filtered candidate pool routes to the fallback.
+  const allowed = new Set(topPlayers.map((p) => p.id));
+  if (result.object.picks.some((p) => !allowed.has(p.playerId)))
+    throw new Error("LLM returned a player outside the available candidate pool");
   return result.object;
 }
