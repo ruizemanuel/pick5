@@ -11,7 +11,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { coachPicks } from "@/lib/db/schema";
-import { getBootstrap } from "@/lib/fpl/client";
+import { FplScoreProvider } from "@/lib/scoring/fpl-provider";
 import { generateCoachPicks } from "@/lib/ai/coach";
 import { fallbackPicks } from "@/lib/ai/fallback";
 import { coachAgentAbi } from "@/lib/contracts/abi";
@@ -51,14 +51,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const bootstrap = await getBootstrap();
+  const players = await FplScoreProvider.getPlayers();
 
   let picks;
   try {
-    picks = await generateCoachPicks(mw, bootstrap);
+    picks = await generateCoachPicks(mw, players);
   } catch (e) {
     console.error("LLM failed, using fallback", e);
-    picks = fallbackPicks(bootstrap);
+    picks = fallbackPicks(players);
   }
 
   const playerIds = picks.picks.map((p) => p.playerId) as [number, number, number, number, number];

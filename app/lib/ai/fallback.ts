@@ -1,23 +1,14 @@
-import type { FplBootstrap } from "@/lib/fpl/client";
-import type { CoachPicks } from "./coach";
+import type { ProviderPlayer } from "@/lib/scoring/provider";
+import { rankCandidates, type CoachPicks } from "./coach";
 
-export function fallbackPicks(bootstrap: FplBootstrap): CoachPicks {
-  const ranked = bootstrap.elements
-    .map((e) => ({
-      id: e.id,
-      name: e.web_name,
-      score:
-        (parseFloat(e.form) * parseFloat(e.selected_by_percent)) /
-        Math.max(e.now_cost / 10, 0.1),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
-
+export function fallbackPicks(players: ProviderPlayer[]): CoachPicks {
   return {
-    picks: ranked.map((r) => ({
-      playerId: r.id,
-      playerName: r.name,
-      reasoning: "Selected via rule-based fallback (form × ownership ÷ cost).",
-    })) as CoachPicks["picks"],
+    picks: rankCandidates(players)
+      .slice(0, 5)
+      .map((p) => ({
+        playerId: p.id,
+        playerName: p.name,
+        reasoning: "Selected via rule-based fallback (form × ownership ÷ cost).",
+      })),
   };
 }
