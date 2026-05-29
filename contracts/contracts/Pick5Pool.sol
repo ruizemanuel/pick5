@@ -3,24 +3,38 @@ pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 interface IAavePool {
     function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external;
     function withdraw(address asset, uint256 amount, address to) external returns (uint256);
 }
 
-contract Pick5Pool is Ownable, ReentrancyGuard {
+interface IPick5PoolFactory {
+    function oracle() external view returns (address);
+}
+
+contract Pick5Pool is
+    Initializable,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuard
+{
     using SafeERC20 for IERC20;
 
-    address public immutable oracle;
-    IERC20  public immutable usdt;
-    IAavePool public immutable aavePool;
-    IERC20  public immutable aUsdt;
-    uint256 public immutable lockTime;
-    uint256 public immutable endTime;
-    uint256 public constant DEPOSIT = 1_000_000;
+    address   public factory;       // source of the (rotatable) oracle
+    IERC20    public usdt;
+    IAavePool public aavePool;
+    IERC20    public aUsdt;
+    uint256   public lockTime;
+    uint256   public endTime;
+    uint256   public deposit;       // per-tournament entry fee (was the DEPOSIT constant)
+    uint256   public tournamentId;
+    string    public label;
+
     uint256 public constant MAX_PARTICIPANTS = 500;
     uint256 public constant EMERGENCY_DELAY = 30 days;
     uint256 public constant ADMIN_EMERGENCY_DELAY = 60 days;
@@ -34,7 +48,6 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     event Seeded(uint256 amount);
     event Joined(address indexed user, uint16[5] lineup, uint256 participantIndex);
 
-    error ZeroOracle();
     error BadTimes();
     error AlreadySeeded();
     error AlreadyJoined();
@@ -43,22 +56,51 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
     error ZeroAmount();
     error PoolFull();
 
-    constructor(
-        address _oracle,
+    /// @dev The implementation is never used directly — only cloned + initialized
+    /// by the factory. Lock it so the implementation itself can't be initialized.
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address _factory,
+        address _owner,
         IERC20 _usdt,
         IAavePool _aavePool,
         IERC20 _aUsdt,
         uint256 _lockTime,
-        uint256 _endTime
-    ) Ownable(msg.sender) {
-        if (_oracle == address(0)) revert ZeroOracle();
+        uint256 _endTime,
+        uint256 _deposit,
+        uint256 _tournamentId,
+        string calldata _label
+    ) external initializer {
         if (_lockTime >= _endTime) revert BadTimes();
-        oracle = _oracle;
+        if (_deposit == 0) revert ZeroAmount();
+        __Ownable_init(_owner);
+        __Pausable_init();
+        factory = _factory;
         usdt = _usdt;
         aavePool = _aavePool;
         aUsdt = _aUsdt;
         lockTime = _lockTime;
         endTime = _endTime;
+        deposit = _deposit;
+        tournamentId = _tournamentId;
+        label = _label;
+    }
+
+    /// @notice Oracle is read from the factory at call time (Phase B.1) so it can
+    /// be rotated between tournaments without redeploying or touching live pools.
+    function oracle() public view returns (address) {
+        return IPick5PoolFactory(factory).oracle();
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     function seedPool(uint256 amount) external onlyOwner nonReentrant {
@@ -71,7 +113,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         emit Seeded(amount);
     }
 
-    function joinTournament(uint16[5] calldata lineup) external nonReentrant {
+    function joinTournament(uint16[5] calldata lineup) external nonReentrant whenNotPaused {
         if (block.timestamp >= lockTime) revert TournamentLocked();
         if (hasJoined[msg.sender]) revert AlreadyJoined();
         if (participants.length >= MAX_PARTICIPANTS) revert PoolFull();
@@ -82,9 +124,9 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         uint256 idx = participants.length;
         participants.push(msg.sender);
 
-        usdt.safeTransferFrom(msg.sender, address(this), DEPOSIT);
-        usdt.forceApprove(address(aavePool), DEPOSIT);
-        aavePool.supply(address(usdt), DEPOSIT, address(this), 0);
+        usdt.safeTransferFrom(msg.sender, address(this), deposit);
+        usdt.forceApprove(address(aavePool), deposit);
+        aavePool.supply(address(usdt), deposit, address(this), 0);
 
         emit Joined(msg.sender, lineup, idx);
     }
@@ -109,7 +151,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         uint128[]  calldata points,
         uint256    randomSeed
     ) external {
-        if (msg.sender != oracle) revert NotOracle();
+        if (msg.sender != IPick5PoolFactory(factory).oracle()) revert NotOracle();
         if (emergencyActive) revert EmergencyActiveErr();
         if (block.timestamp < endTime) revert TournamentNotEnded();
         if (scoresSubmitted) revert AlreadySubmitted();
@@ -181,7 +223,7 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         uint256 aBal = aUsdt.balanceOf(address(this));
         aavePool.withdraw(address(usdt), aBal, address(this));
 
-        uint256 totalDeposits = DEPOSIT * participants.length;
+        uint256 totalDeposits = deposit * participants.length;
         uint256 contractBal = usdt.balanceOf(address(this));
         uint256 prize = contractBal - totalDeposits;
 
@@ -195,8 +237,8 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         if (!hasJoined[msg.sender]) revert NotJoined();
         if (depositWithdrawn[msg.sender]) revert AlreadyWithdrawn();
         depositWithdrawn[msg.sender] = true;
-        usdt.safeTransfer(msg.sender, DEPOSIT);
-        emit DepositWithdrawn(msg.sender, DEPOSIT);
+        usdt.safeTransfer(msg.sender, deposit);
+        emit DepositWithdrawn(msg.sender, deposit);
     }
 
     function claimPrize() external nonReentrant {
@@ -211,11 +253,6 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
 
     // ------------------------------------------------------------------ //
     // Emergency path — used when the oracle never submits scores.        //
-    // Anyone can call triggerEmergency() after endTime + 30 days while   //
-    // scores have not been submitted; this pulls all funds from Aave     //
-    // and unblocks per-user emergencyUserWithdraw() refunds.             //
-    // The owner can sweep any residual (seed + unclaimed deposits) after //
-    // endTime + 60 days — gives joiners a 30-day claim window.           //
     // ------------------------------------------------------------------ //
 
     bool public emergencyActive;
@@ -250,16 +287,11 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         if (!hasJoined[msg.sender]) revert NotJoined();
         if (emergencyWithdrawn[msg.sender]) revert AlreadyEmergencyWithdrawn();
         emergencyWithdrawn[msg.sender] = true;
-        usdt.safeTransfer(msg.sender, DEPOSIT);
-        emit EmergencyUserWithdrawn(msg.sender, DEPOSIT);
+        usdt.safeTransfer(msg.sender, deposit);
+        emit EmergencyUserWithdrawn(msg.sender, deposit);
     }
 
     function emergencyAdminWithdraw() external onlyOwner nonReentrant {
-        // Allowed in two situations:
-        //  (a) No one joined and 7 days passed since endTime — original case,
-        //      lets the owner reclaim the seed if the tournament drew nobody.
-        //  (b) Emergency mode is active and the 60-day owner-cooldown is up —
-        //      seed + any unclaimed deposits go back to the owner.
         bool emergencyOwnerWindow =
             emergencyActive && block.timestamp >= endTime + ADMIN_EMERGENCY_DELAY;
         if (!emergencyOwnerWindow) {
@@ -267,8 +299,6 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
             if (participants.length > 0) revert HasParticipants();
         }
 
-        // In the no-joiners path, Aave still holds the seed; pull it.
-        // In emergency mode, triggerEmergency() already pulled.
         if (!emergencyActive) {
             uint256 aBal = aUsdt.balanceOf(address(this));
             if (aBal > 0) {
@@ -288,9 +318,13 @@ contract Pick5Pool is Ownable, ReentrancyGuard {
         return participants.length;
     }
 
+    /// @dev Widened for V2: any non-zero, distinct uint16 id is valid. The old
+    /// `>= 1000` cap blocked a 48-team World Cup (48×26 = 1248 players). On-chain
+    /// the id is opaque (only the off-chain scorer maps it to a player), so an
+    /// out-of-universe id simply scores 0 — no griefing surface.
     function _validateLineup(uint16[5] calldata lineup) private pure {
         for (uint8 i = 0; i < 5; i++) {
-            if (lineup[i] == 0 || lineup[i] >= 1000) revert InvalidLineup();
+            if (lineup[i] == 0) revert InvalidLineup();
             for (uint8 j = i + 1; j < 5; j++) {
                 if (lineup[i] == lineup[j]) revert InvalidLineup();
             }

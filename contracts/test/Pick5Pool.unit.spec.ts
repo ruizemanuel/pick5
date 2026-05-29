@@ -1,32 +1,5 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import type { Pick5Pool } from "../typechain-types";
-
-describe("Pick5Pool — constructor + immutables", () => {
-  it("stores oracle, usdt, aavePool, lockTime, endTime", async () => {
-    const [admin, oracle, fakeUsdt, fakeAave, fakeAUsdt] = await ethers.getSigners();
-    const lockTime = Math.floor(Date.now() / 1000) + 1000;
-    const endTime = lockTime + 100_000;
-
-    const Factory = await ethers.getContractFactory("Pick5Pool");
-    const pool = (await Factory.deploy(
-      oracle.address,
-      fakeUsdt.address,
-      fakeAave.address,
-      fakeAUsdt.address,
-      lockTime,
-      endTime
-    )) as unknown as Pick5Pool;
-
-    expect(await pool.oracle()).to.equal(oracle.address);
-    expect(await pool.usdt()).to.equal(fakeUsdt.address);
-    expect(await pool.aavePool()).to.equal(fakeAave.address);
-    expect(await pool.aUsdt()).to.equal(fakeAUsdt.address);
-    expect(await pool.lockTime()).to.equal(BigInt(lockTime));
-    expect(await pool.endTime()).to.equal(BigInt(endTime));
-    expect(await pool.DEPOSIT()).to.equal(1_000_000n);
-  });
-});
 
 async function deployFixture() {
   const [admin, oracle, alice, bob] = await ethers.getSigners();
@@ -41,15 +14,19 @@ async function deployFixture() {
   const lockTime = now + 1000;
   const endTime = lockTime + 100_000;
 
-  const Pool = await ethers.getContractFactory("Pick5Pool");
-  const pool = await Pool.deploy(
-    oracle.address,
+  const Impl = await ethers.getContractFactory("Pick5Pool");
+  const impl = await Impl.deploy();
+  const FactoryC = await ethers.getContractFactory("Pick5PoolFactory");
+  const factory = await FactoryC.deploy(
+    await impl.getAddress(),
     await usdt.getAddress(),
     await aave.getAddress(),
     await aUsdt.getAddress(),
-    lockTime,
-    endTime
+    oracle.address,   // oracle (rotatable)
+    admin.address,    // coach (unused by the pool; any address is fine for tests)
   );
+  await factory.createTournament(lockTime, endTime, 1_000_000n, "TEST");
+  const pool = await ethers.getContractAt("Pick5Pool", await factory.tournamentBy(0));
 
   await usdt.mint(admin.address, 100_000_000n);
   await usdt.mint(alice.address, 50_000_000n);
@@ -124,13 +101,15 @@ describe("Pick5Pool — joinTournament", () => {
       .to.be.revertedWithCustomError(pool, "InvalidLineup");
   });
 
-  it("rejects player ID 0 or > 999", async () => {
+  it("rejects player ID 0 but accepts high IDs (>= 1000, World-Cup-ready)", async () => {
     const { alice, usdt, pool } = await deployFixture();
     await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
+    // 0 is still invalid
     await expect(pool.connect(alice).joinTournament([0, 2, 3, 4, 5]))
       .to.be.revertedWithCustomError(pool, "InvalidLineup");
-    await expect(pool.connect(alice).joinTournament([1000, 2, 3, 4, 5]))
-      .to.be.revertedWithCustomError(pool, "InvalidLineup");
+    // a 4-digit id (e.g. World Cup player 1248) is now valid
+    await expect(pool.connect(alice).joinTournament([1000, 1248, 3, 4, 5]))
+      .to.emit(pool, "Joined");
   });
 });
 

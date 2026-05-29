@@ -36,16 +36,20 @@ describe("Pick5Pool — Aave V3 Celo mainnet fork integration", function () {
 
     // Deploy Pick5Pool against real Aave V3 + USDT
     const now = BigInt((await ethers.provider.getBlock("latest"))!.timestamp);
-    const Pool = await ethers.getContractFactory("Pick5Pool");
-    const pool = await Pool.deploy(
-      oracle.address,
+    const Impl = await ethers.getContractFactory("Pick5Pool");
+    const impl = await Impl.deploy();
+    const FactoryC = await ethers.getContractFactory("Pick5PoolFactory");
+    const factory = await FactoryC.deploy(
+      await impl.getAddress(),
       USDT,
       AAVE_POOL,
       AUSDT,
-      now + 100n,       // lockTime: 100 seconds from now
-      now + 1_000_000n, // endTime
+      oracle.address,  // oracle
+      admin.address,   // coach (unused by the pool)
     );
-    const poolAddr = await pool.getAddress();
+    await factory.createTournament(now + 100n, now + 1_000_000n, 1_000_000n, "FORK");
+    const poolAddr = await factory.tournamentBy(0);
+    const pool = await ethers.getContractAt("Pick5Pool", poolAddr);
 
     // ── Seed the pool ─────────────────────────────────────────────────────────
     await usdt.connect(admin).approve(poolAddr, 10_000_000n);

@@ -18,15 +18,19 @@ async function deployFixture() {
   const lockTime = now + 1000;
   const endTime = lockTime + 100_000;
 
-  const Pool = await ethers.getContractFactory("Pick5Pool");
-  const pool = await Pool.deploy(
-    oracle.address,
+  const Impl = await ethers.getContractFactory("Pick5Pool");
+  const impl = await Impl.deploy();
+  const FactoryC = await ethers.getContractFactory("Pick5PoolFactory");
+  const factory = await FactoryC.deploy(
+    await impl.getAddress(),
     await usdt.getAddress(),
     await aave.getAddress(),
     await aUsdt.getAddress(),
-    lockTime,
-    endTime
+    oracle.address,   // oracle (rotatable)
+    admin.address,    // coach (unused by the pool; any address is fine for tests)
   );
+  await factory.createTournament(lockTime, endTime, 1_000_000n, "TEST");
+  const pool = await ethers.getContractAt("Pick5Pool", await factory.tournamentBy(0));
 
   await usdt.mint(admin.address, 100_000_000n);
   await usdt.mint(alice.address, 50_000_000n);

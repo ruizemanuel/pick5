@@ -14,15 +14,19 @@ describe("Pick5Pool — tie-breaking determinism", () => {
     const now = (await ethers.provider.getBlock("latest"))!.timestamp;
     const lockTime = now + 1000;
     const endTime = lockTime + 100_000;
-    const Pool = await ethers.getContractFactory("Pick5Pool");
-    const pool = await Pool.deploy(
-      oracle.address,
+    const Impl = await ethers.getContractFactory("Pick5Pool");
+    const impl = await Impl.deploy();
+    const FactoryC = await ethers.getContractFactory("Pick5PoolFactory");
+    const factory = await FactoryC.deploy(
+      await impl.getAddress(),
       await usdt.getAddress(),
       await aave.getAddress(),
       await aUsdt.getAddress(),
-      lockTime,
-      endTime
+      oracle.address,   // oracle
+      admin.address,    // coach (unused by the pool)
     );
+    await factory.createTournament(lockTime, endTime, 1_000_000n, "TEST");
+    const pool = await ethers.getContractAt("Pick5Pool", await factory.tournamentBy(0));
 
     for (const u of [alice, bob, charlie]) {
       await usdt.mint(u.address, 5_000_000n);

@@ -13,15 +13,19 @@ async function deploy() {
   const now = (await ethers.provider.getBlock("latest"))!.timestamp;
   const lockTime = now + 1000;
   const endTime = lockTime + 100_000;
-  const Pool = await ethers.getContractFactory("Pick5Pool");
-  const pool = await Pool.deploy(
-    oracle.address,
+  const Impl = await ethers.getContractFactory("Pick5Pool");
+  const impl = await Impl.deploy();
+  const FactoryC = await ethers.getContractFactory("Pick5PoolFactory");
+  const factory = await FactoryC.deploy(
+    await impl.getAddress(),
     await usdt.getAddress(),
     await aave.getAddress(),
     await aUsdt.getAddress(),
-    lockTime,
-    endTime
+    oracle.address,   // oracle (rotatable)
+    admin.address,    // coach (unused by the pool; any address is fine for tests)
   );
+  await factory.createTournament(lockTime, endTime, 1_000_000n, "TEST");
+  const pool = await ethers.getContractAt("Pick5Pool", await factory.tournamentBy(0));
 
   await usdt.mint(admin.address, 100_000_000n);
   await usdt.mint(alice.address, 50_000_000n);
@@ -124,11 +128,11 @@ describe("Pick5Pool — attack vectors", () => {
         .to.be.revertedWithCustomError(pool, "InvalidLineup");
     });
 
-    it("user cannot submit lineup with max uint16 IDs", async () => {
+    it("accepts high player IDs (widened uint16 range for World Cup)", async () => {
       const { alice, usdt, pool } = await deploy();
       await usdt.connect(alice).approve(await pool.getAddress(), 5_000_000n);
       await expect(pool.connect(alice).joinTournament([65535, 1, 2, 3, 4]))
-        .to.be.revertedWithCustomError(pool, "InvalidLineup");
+        .to.emit(pool, "Joined");
     });
   });
 });
