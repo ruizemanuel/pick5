@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { inArray, sql, desc } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { leaderboardCache } from "@/lib/db/schema";
+import { getActiveSeason, seasonFechaIds } from "@/lib/tournaments/seasons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,43 +15,32 @@ export async function GET(req: NextRequest) {
 
   try {
     const db = getDb();
+    const ids = seasonFechaIds(getActiveSeason());
     const rows = await db
       .select({
         wallet: leaderboardCache.wallet,
-        mw37: leaderboardCache.mw37Pts,
-        mw38: leaderboardCache.mw38Pts,
-        rank: leaderboardCache.rank,
+        total: sql<number>`sum(${leaderboardCache.pts})::int`,
       })
       .from(leaderboardCache)
-      .where(eq(leaderboardCache.wallet, wallet))
-      .limit(1);
+      .where(inArray(leaderboardCache.tournamentId, ids))
+      .groupBy(leaderboardCache.wallet)
+      .orderBy(desc(sql`sum(${leaderboardCache.pts})`));
 
-    const row = rows[0];
-    if (!row) {
-      return NextResponse.json({
-        wallet,
-        rank: null,
-        mw37: 0,
-        mw38: 0,
-        total: 0,
-      });
+    const maxTotal = rows.length > 0 ? Number(rows[0].total) : 0;
+    const idx = rows.findIndex((r) => r.wallet === wallet);
+    if (idx < 0) {
+      return NextResponse.json({ wallet, rank: null, total: 0 });
     }
-
-    return NextResponse.json({
-      wallet: row.wallet,
-      rank: row.rank,
-      mw37: row.mw37,
-      mw38: row.mw38,
-      total: row.mw37 + row.mw38,
-    });
+    // Competition ranking (ties share a rank); null until anyone has points.
+    let rank: number | null = null;
+    if (maxTotal > 0) {
+      const myTotal = Number(rows[idx].total);
+      rank = 1;
+      for (let i = 0; i < idx; i++) if (Number(rows[i].total) > myTotal) rank++;
+    }
+    return NextResponse.json({ wallet, rank, total: Number(rows[idx].total) });
   } catch (err) {
     console.error("[leaderboard/me]", err);
-    return NextResponse.json({
-      wallet,
-      rank: null,
-      mw37: 0,
-      mw38: 0,
-      total: 0,
-    });
+    return NextResponse.json({ wallet, rank: null, total: 0 });
   }
 }

@@ -5,8 +5,6 @@ import { useAccount } from "wagmi";
 
 export type LeaderboardRow = {
   wallet: string;
-  mw37: number;
-  mw38: number;
   total: number;
   rank: number | null;
 };
@@ -86,7 +84,7 @@ export function LeaderboardView({ rows }: { rows: LeaderboardRow[] }) {
             Awaiting first points
           </div>
           <div className="mt-1 text-xs text-white/60">
-            Rankings appear here once players in the pool start scoring in MW37.
+            Rankings appear here once players in the pool start scoring.
           </div>
         </div>
       )}

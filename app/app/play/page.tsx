@@ -25,8 +25,6 @@ type LiveStats = {
 type MeRow = {
   wallet: string;
   rank: number | null;
-  mw37: number;
-  mw38: number;
   total: number;
 };
 

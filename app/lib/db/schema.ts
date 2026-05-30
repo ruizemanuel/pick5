@@ -6,6 +6,7 @@ import {
   timestamp,
   jsonb,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const coachPicks = pgTable(
@@ -47,12 +48,14 @@ export const userProfiles = pgTable("user_profiles", {
     .notNull(),
 });
 
-export const leaderboardCache = pgTable("leaderboard_cache", {
-  wallet: text("wallet").primaryKey(),
-  mw37Pts: integer("mw37_pts").default(0).notNull(),
-  mw38Pts: integer("mw38_pts").default(0).notNull(),
-  rank: integer("rank"),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+export const leaderboardCache = pgTable(
+  "leaderboard_cache",
+  {
+    tournamentId: integer("tournament_id").notNull(),
+    wallet: text("wallet").notNull(),
+    pts: integer("pts").default(0).notNull(),
+    rank: integer("rank"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.tournamentId, t.wallet] }) }),
+);
