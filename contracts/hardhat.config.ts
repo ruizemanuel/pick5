@@ -17,13 +17,15 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      forking: {
-        url: "https://forno.celo.org",
-        // Pinned for deterministic Aave fork tests. forno prunes state for
-        // unpinned `latest` within seconds → intermittent "historical state not
-        // available". Bump this if forno stops serving state for this block.
-        blockNumber: 68196393,
-      },
+      // Forking is OPT-IN (set FORK=1) so the deterministic mock/unit suite never
+      // depends on forno. forno retains historical state only ~64-127 blocks and
+      // load-balances across independently-pruning nodes, so a static block pin is
+      // unviable. The *.aave.spec.ts fork tests are gated behind FORK and fork
+      // `latest` on demand:
+      //   FORK=1 pnpm -C contracts exec hardhat test test/SeasonPool.aave.spec.ts test/Pick5Pool.aave.spec.ts
+      ...(process.env.FORK
+        ? { forking: { url: "https://forno.celo.org" } }
+        : {}),
       chainId: 31337,
     },
     alfajores: {

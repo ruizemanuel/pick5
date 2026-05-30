@@ -6,7 +6,11 @@ const AAVE_POOL = "0x3E59A31363E2ad014dcbc521c4a0d5757d9f3402";
 const AUSDT     = "0xDeE98402A302e4D707fB9bf2bac66fAEEc31e8Df";
 const USDT_WHALE = "0xDeE98402A302e4D707fB9bf2bac66fAEEc31e8Df"; // aUSDT holds ~7.4M USDT
 
-describe("SeasonPool — Aave V3 Celo mainnet fork integration", function () {
+// Fork tests are opt-in: they need a live Celo fork (FORK=1 enables forking in
+// hardhat.config.ts). Skipped by default so the deterministic suite is forno-free.
+const forkDescribe = process.env.FORK ? describe : describe.skip;
+
+forkDescribe("SeasonPool — Aave V3 Celo mainnet fork integration", function () {
   this.timeout(180_000);
 
   it("seed + submit standings + finalize + champion claims on real Aave", async () => {

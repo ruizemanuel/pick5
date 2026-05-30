@@ -11,7 +11,11 @@ const AUSDT     = "0xDeE98402A302e4D707fB9bf2bac66fAEEc31e8Df";
 // Using it as the impersonated whale is safe in Hardhat fork mode.
 const USDT_WHALE = "0xDeE98402A302e4D707fB9bf2bac66fAEEc31e8Df";
 
-describe("Pick5Pool — Aave V3 Celo mainnet fork integration", function () {
+// Fork tests are opt-in: they need a live Celo fork (FORK=1 enables forking in
+// hardhat.config.ts). Skipped by default so the deterministic suite is forno-free.
+const forkDescribe = process.env.FORK ? describe : describe.skip;
+
+forkDescribe("Pick5Pool — Aave V3 Celo mainnet fork integration", function () {
   this.timeout(180_000);
 
   it("seed + 2 joins on real Aave Celo", async () => {
