@@ -34,6 +34,10 @@ async function main() {
   const endTime  = Math.floor(new Date("2026-08-23T19:00:00Z").getTime() / 1000);
   const label = process.env.TOURNAMENT_LABEL ?? "PL MW1-2";
 
+  // Season window — spans the whole PL season. Adjust per season before deploying.
+  const seasonEndTime = Math.floor(new Date("2027-05-31T23:00:00Z").getTime() / 1000);
+  const seasonLabel = process.env.SEASON_LABEL ?? "Premier League 2026/27";
+
   let usdt: string, aavePool: string, aUsdt: string;
 
   if (isTestnet) {
@@ -97,6 +101,23 @@ async function main() {
   const poolAddr = await factory.tournamentBy(0);
   console.log("Tournament #0 pool:", poolAddr);
 
+  // 3b) SeasonPool implementation + first season
+  console.log("\nDeploying SeasonPool implementation...");
+  const SeasonImpl = await ethers.getContractFactory("SeasonPool");
+  const seasonImpl = await SeasonImpl.deploy();
+  await seasonImpl.waitForDeployment();
+  const seasonImplAddr = await seasonImpl.getAddress();
+  console.log("SeasonPool (impl):", seasonImplAddr);
+
+  await (await factory.setSeasonImplementation(seasonImplAddr)).wait();
+  console.log("Factory.seasonImplementation set");
+
+  console.log("\nCreating first season...");
+  const seasonTx = await factory.createSeason(seasonEndTime, seasonLabel);
+  await seasonTx.wait();
+  const seasonAddr = await factory.seasonBy(0);
+  console.log("Season #0 pool:", seasonAddr);
+
   // 4) CoachAgent (per-competition; unchanged from V1)
   console.log("\nDeploying CoachAgent...");
   const Coach = await ethers.getContractFactory("CoachAgent");
@@ -109,6 +130,7 @@ async function main() {
   const suffix = isCelo ? "CELO" : testnetSuffix;
   console.log(`NEXT_PUBLIC_PICK5_FACTORY_${suffix}=${factoryAddr}`);
   console.log(`NEXT_PUBLIC_COACH_AGENT_${suffix}=${coachAddrDeployed}`);
+  console.log(`NEXT_PUBLIC_SEASON_POOL_${suffix}=${seasonAddr}`);
   if (isTestnet) {
     console.log(`NEXT_PUBLIC_USDT_${testnetSuffix}=${usdt}`);
   }
@@ -116,8 +138,9 @@ async function main() {
   console.log("\nNext steps (verify):");
   console.log(`  npx hardhat verify --network ${verifyNet} ${implAddr}`);
   console.log(`  npx hardhat verify --network ${verifyNet} ${factoryAddr} ${implAddr} ${usdt} ${aavePool} ${aUsdt} ${oracleAddr} ${coachAddr}`);
+  console.log(`  npx hardhat verify --network ${verifyNet} ${seasonImplAddr}`);
   console.log(`  npx hardhat verify --network ${verifyNet} ${coachAddrDeployed} ${coachAddr}`);
-  console.log("\nNote: seed the tournament pool separately (owner calls seedPool on the clone).");
+  console.log("\nNote: seed the tournament pool(s) AND the season pool separately (owner calls seedPool on each clone).");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

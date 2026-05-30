@@ -67,6 +67,18 @@ async function main() {
   const poolAddr = await factory.tournamentBy(0);
   console.log("Tournament #0 pool:", poolAddr);
 
+  const SeasonImpl = await ethers.getContractFactory("SeasonPool");
+  const seasonImpl = await SeasonImpl.deploy();
+  await seasonImpl.waitForDeployment();
+  const seasonImplAddr = await seasonImpl.getAddress();
+  console.log("SeasonPool (impl):", seasonImplAddr);
+  await (await factory.setSeasonImplementation(seasonImplAddr)).wait();
+
+  const seasonEnd = now + 20 * 60; // 20 min from now (short-lifetime dry-run)
+  await (await factory.createSeason(seasonEnd, "TEST SEASON")).wait();
+  const seasonAddr = await factory.seasonBy(0);
+  console.log("Season #0 pool:", seasonAddr);
+
   const Coach = await ethers.getContractFactory("CoachAgent");
   const coach = await Coach.deploy(coachAddr);
   await coach.waitForDeployment();
@@ -76,6 +88,7 @@ async function main() {
   console.log("\n=== TEST DEPLOY SUMMARY ===");
   console.log(`NEXT_PUBLIC_PICK5_FACTORY_SEPOLIA=${factoryAddr}`);
   console.log(`NEXT_PUBLIC_COACH_AGENT_SEPOLIA=${coachAddrDeployed}`);
+  console.log(`NEXT_PUBLIC_SEASON_POOL_SEPOLIA=${seasonAddr}`);
   console.log(`NEXT_PUBLIC_USDT_SEPOLIA=${usdt}`);
   console.log(`# tournament #0 pool=${poolAddr}`);
   console.log(`# lockTime=${lockTime} (${new Date(lockTime * 1000).toISOString()})`);
