@@ -45,7 +45,7 @@ export default function MyTeamPage() {
   const params = useParams<{ tid: string }>();
   const tid = Number(params.tid);
   const round = fechaRound(tid);
-  const { poolAddr } = useFechaPool(tid);
+  const { poolAddr, isLoading: poolLoading } = useFechaPool(tid);
   const { address, isConnected } = useAccount();
   const { lineup, refetch: refetchLineup } = useLineup(poolAddr);
   const pool = usePool(poolAddr);
@@ -90,15 +90,16 @@ export default function MyTeamPage() {
   }, [round]);
 
   useEffect(() => {
-    if (!address) {
+    if (!address || !Number.isInteger(tid)) {
       setMe(null);
       return;
     }
-    fetch(`/api/leaderboard/me?wallet=${address.toLowerCase()}`)
+    // Scope to THIS fecha (?t=tid) so the score/rank are per-fecha, not the season total.
+    fetch(`/api/leaderboard/me?wallet=${address.toLowerCase()}&t=${tid}`)
       .then((r) => r.json())
       .then((d: MeRow) => setMe(d))
       .catch(() => setMe(null));
-  }, [address]);
+  }, [address, tid]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -156,9 +157,13 @@ export default function MyTeamPage() {
   const lockParts = lockMs
     ? partsBetween(new Date(lockMs), now)
     : { expired: false, days: 0, hours: 0, mins: 0 };
-  const fechaNo = fechaNumber(tid) ?? tid + 1;
+  const fechaNo = fechaNumber(tid) ?? (Number.isInteger(tid) ? tid + 1 : null);
   const fechaLabel =
-    round !== undefined ? `Fecha ${fechaNo} · GW${round}` : `Fecha ${fechaNo}`;
+    fechaNo === null
+      ? "Fecha"
+      : round !== undefined
+        ? `Fecha ${fechaNo} · GW${round}`
+        : `Fecha ${fechaNo}`;
   const statusLabel = finalized ? "FINAL" : isLocked ? "LIVE" : "LOCKS IN";
   const statusValue = finalized
     ? "Settled"
@@ -176,9 +181,9 @@ export default function MyTeamPage() {
     return ids.reduce((sum, id) => sum + (live.stats[id]?.points ?? 0), 0);
   }, [live, ids]);
 
-  // `me.total` is the cron-cached, post-settlement total — it stays 0 while a
-  // matchweek is still mid-flight, so `?? ` would never fall through (0 is a
-  // valid value). During a live MW use the FPL live feed instead.
+  // `me.total` is THIS fecha's cron-cached, post-settlement points (scoped by ?t=);
+  // it stays 0 while the fecha is mid-flight, so during a live fecha we fall back to
+  // the FPL live feed for this round.
   const cachedTotal = me?.total ?? 0;
   const totalScore = cachedTotal > 0 ? cachedTotal : currentMwPoints;
 
@@ -198,6 +203,46 @@ export default function MyTeamPage() {
             Connect your wallet to see your lineup.
           </p>
           <ConnectedWalletPill />
+        </div>
+        <BottomNav />
+      </main>
+    );
+  }
+
+  // Until useFechaPool resolves, usePool/useLineup fall back to the ACTIVE
+  // tournament — gate the whole view on the resolved pool so we never flash the
+  // active fecha's data on a different fecha's page. Resolved-but-empty = no pool yet.
+  if (!poolAddr) {
+    return (
+      <main className="min-h-dvh bg-[#08070D] text-white">
+        <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
+          <header className="flex items-center justify-between">
+            <span className="font-display text-2xl tracking-[0.2em] text-white">
+              PICK<span className="text-[#00DF7C]">5</span>
+            </span>
+            <ConnectedWalletPill />
+          </header>
+          <section className="pt-6">
+            <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">
+              {fechaLabel}
+            </div>
+            <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
+              My Team
+            </h1>
+            <Link
+              href={"/tournaments" as Route}
+              className="mt-4 inline-flex items-center gap-1 text-xs text-white/50 hover:text-white/80"
+            >
+              ← Todas las fechas
+            </Link>
+          </section>
+          <section className="pt-6">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center text-sm text-white/50">
+              {poolLoading
+                ? "Loading fecha…"
+                : "This fecha isn't open yet. Check the fechas hub."}
+            </div>
+          </section>
         </div>
         <BottomNav />
       </main>
@@ -324,14 +369,14 @@ export default function MyTeamPage() {
                       : !isLocked
                         ? "yet to play"
                         : cachedTotal > 0
-                          ? "Season total"
+                          ? "Fecha total"
                           : "This fecha live"
                   }
                 />
                 <Stat
                   label="Rank"
                   value={rankLabel}
-                  sub={showRank ? "of all players" : "after first points"}
+                  sub={showRank ? "this fecha" : "after first points"}
                 />
                 <Stat
                   label={statusLabel}
