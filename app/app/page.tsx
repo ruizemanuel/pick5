@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { createPublicClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { DesktopTicketCTA } from "@/components/DesktopTicketCTA";
@@ -14,14 +14,8 @@ import { resolveActivePool } from "@/lib/contracts/factory";
 
 export const revalidate = 60; // refresh on-chain stats once per minute
 
-function getChain(network: string) {
-  if (network === "celo") return celo;
-  if (network === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
-
 async function readPoolStats() {
-  const client = createPublicClient({ chain: getChain(DEFAULT_NETWORK), transport: http() });
+  const client = createPublicClient({ chain: chainForNetwork(DEFAULT_NETWORK), transport: http() });
   try {
     const pool = await resolveActivePool(client, DEFAULT_NETWORK);
     if (!pool) {

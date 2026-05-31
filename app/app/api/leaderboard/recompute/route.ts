@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, type PublicClient } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { leaderboardCache } from "@/lib/db/schema";
@@ -13,12 +13,6 @@ import { getActiveSeason, fechaRound } from "@/lib/tournaments/seasons";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
-
-function getChain(network: string) {
-  if (network === "celo") return celo;
-  if (network === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
 
 type Lineup = readonly [bigint, bigint, bigint, bigint, bigint];
 
@@ -103,7 +97,7 @@ export async function GET(req: NextRequest) {
   }
   const db = getDb();
   const network = DEFAULT_NETWORK;
-  const client = createPublicClient({ chain: getChain(network), transport: http() });
+  const client = createPublicClient({ chain: chainForNetwork(network), transport: http() });
 
   // ?t=<tournamentId> recomputes one fecha; absent -> every fecha of the active season.
   const tParam = req.nextUrl.searchParams.get("t");

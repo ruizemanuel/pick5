@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createWalletClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { privateKeyToAccount } from "viem/accounts";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
@@ -13,12 +13,6 @@ import { isConfiguredRound } from "@/lib/tournaments/seasons";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
-
-function getChain(network: string) {
-  if (network === "celo") return celo;
-  if (network === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -67,7 +61,7 @@ export async function GET(req: NextRequest) {
   }
 
   const network = DEFAULT_NETWORK;
-  const chain = getChain(network);
+  const chain = chainForNetwork(network);
   const account = privateKeyToAccount(process.env.COACH_PRIVATE_KEY as `0x${string}`);
   const walletClient = createWalletClient({ chain, account, transport: http() });
 

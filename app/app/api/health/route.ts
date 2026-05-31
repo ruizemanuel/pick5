@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { pick5PoolAbi, coachAgentAbi, pick5SeasonAbi } from "@/lib/contracts/abi";
 import { coachAddress, usdtAddress, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
 import { resolveActivePool, resolveSeasonPool } from "@/lib/contracts/factory";
@@ -9,12 +9,6 @@ import { getActiveSeason } from "@/lib/tournaments/seasons";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
-
-function getChain(network: string) {
-  if (network === "celo") return celo;
-  if (network === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
 
 const ZERO = "0x0000000000000000000000000000000000000000";
 
@@ -30,7 +24,7 @@ const ERC20_BAL_ABI = [
 
 export async function GET() {
   const network = DEFAULT_NETWORK;
-  const chain = getChain(network);
+  const chain = chainForNetwork(network);
   const client = createPublicClient({ chain, transport: http() });
   const coach = coachAddress(network);
   const usdt = usdtAddress(network);

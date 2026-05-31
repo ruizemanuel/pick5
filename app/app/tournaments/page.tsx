@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { createPublicClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { FechaCard } from "@/components/FechaCard";
@@ -14,11 +14,6 @@ import { fechaStatus, type FechaStatus } from "@/lib/tournaments/fechaStatus";
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
 
-function getChain(n: string) {
-  if (n === "celo") return celo;
-  if (n === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
 const usd = (n: bigint) => `$${(Number(n) / 1_000_000).toFixed(2)}`;
 const trunc = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
@@ -32,7 +27,7 @@ async function load() {
   let seasonFinalized = false;
   const rows: Row[] = [];
   try {
-    const client = createPublicClient({ chain: getChain(network), transport: http() });
+    const client = createPublicClient({ chain: chainForNetwork(network), transport: http() });
     const seasonPool = await resolveSeasonPool(client, network, season.seasonId);
     if (seasonPool) {
       seedAmount = (await client.readContract({ address: seasonPool, abi: pick5SeasonAbi, functionName: "seedAmount" })) as bigint;

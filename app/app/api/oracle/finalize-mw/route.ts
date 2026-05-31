@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { privateKeyToAccount } from "viem/accounts";
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
@@ -17,13 +17,6 @@ import { fechaRound } from "@/lib/tournaments/seasons";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
-
-function getChain(network: Network) {
-  if (network === "celo") return celo;
-  if (network === "alfajores") return celoAlfajores;
-  if (network === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
 
 /**
  * End-to-end finalize of ONE fecha (gameweek pool): submitScores -> finalizeAndDistribute.
@@ -49,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   const db = getDb();
   const network = DEFAULT_NETWORK;
-  const chain = getChain(network);
+  const chain = chainForNetwork(network);
   const publicClient = createPublicClient({ chain, transport: http() });
 
   const poolAddr = await resolvePoolById(publicClient, network, tournamentId);

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { createPublicClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { Leaderboard } from "@/components/Leaderboard";
 import { SeasonPrizeBanner } from "@/components/SeasonPrizeBanner";
 import { BottomNav } from "@/components/BottomNav";
@@ -13,17 +13,11 @@ import { getActiveSeason } from "@/lib/tournaments/seasons";
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
 
-function getChain(n: string) {
-  if (n === "celo") return celo;
-  if (n === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
-
 async function countSettled(): Promise<{ settled: number; total: number }> {
   const season = getActiveSeason();
   const total = season.fechas.length;
   try {
-    const client = createPublicClient({ chain: getChain(DEFAULT_NETWORK), transport: http() });
+    const client = createPublicClient({ chain: chainForNetwork(DEFAULT_NETWORK), transport: http() });
     let settled = 0;
     for (const f of season.fechas) {
       const pool = await resolvePoolById(client, DEFAULT_NETWORK, f.tournamentId);

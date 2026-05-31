@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, createWalletClient, http } from "viem";
-import { celo, celoAlfajores, celoSepolia } from "viem/chains";
+import { chainForNetwork } from "@/lib/contracts/chain";
 import { privateKeyToAccount } from "viem/accounts";
 import crypto from "node:crypto";
 import { pick5PoolAbi, pick5SeasonAbi } from "@/lib/contracts/abi";
@@ -13,13 +13,6 @@ import { sumSeasonScores } from "@/lib/scoring/season";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
-
-function getChain(network: Network) {
-  if (network === "celo") return celo;
-  if (network === "alfajores") return celoAlfajores;
-  if (network === "celo-sepolia") return celoSepolia;
-  return celoAlfajores;
-}
 
 /**
  * Close a season: build aggregate standings from every fecha's on-chain scores
@@ -43,7 +36,7 @@ export async function GET(req: NextRequest) {
   }
 
   const network = DEFAULT_NETWORK;
-  const chain = getChain(network);
+  const chain = chainForNetwork(network);
   const publicClient = createPublicClient({ chain, transport: http() });
 
   const seasonPool = await resolveSeasonPool(publicClient, network, seasonId);
