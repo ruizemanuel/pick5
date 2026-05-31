@@ -72,7 +72,7 @@ export default function BuildPage() {
 
   // `joinTournament` reverts once the pool locks — don't let users build a
   // lineup they can never submit. Joined users still have a team to view.
-  if (pool.isLocked) {
+  if (poolAddr && pool.isLocked) {
     return (
       <main className="min-h-dvh bg-[#08070D] text-white">
         <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">

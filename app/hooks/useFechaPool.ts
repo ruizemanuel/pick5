@@ -11,13 +11,14 @@ export function useFechaPool(tournamentId: number | undefined) {
   const network = DEFAULT_NETWORK;
   const chainId = CHAIN_ID[network] ?? 42220;
   const factory = factoryAddress(network);
+  const valid = tournamentId !== undefined && Number.isInteger(tournamentId);
   const r = useReadContract({
     abi: pick5FactoryAbi,
     address: factory,
     chainId,
     functionName: "tournamentBy",
-    args: tournamentId !== undefined ? [BigInt(tournamentId)] : undefined,
-    query: { enabled: factory !== ZERO && tournamentId !== undefined },
+    args: valid ? [BigInt(tournamentId)] : undefined,
+    query: { enabled: factory !== ZERO && valid },
   });
   const data = r.data as `0x${string}` | undefined;
   const poolAddr = data && data !== ZERO ? data : undefined;

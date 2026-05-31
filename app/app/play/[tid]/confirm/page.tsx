@@ -75,8 +75,9 @@ export default function ConfirmPage() {
       router.replace(`/play/${tid}/build` as Route);
       return;
     }
-    if (pool.allowance >= parseUnits("1", 6)) setStep("join");
-  }, [lineup, pool.allowance, router, didJoin, tid]);
+    if (!poolAddr) return;
+    setStep(pool.allowance >= parseUnits("1", 6) ? "join" : "approve");
+  }, [lineup, pool.allowance, router, didJoin, poolAddr, tid]);
 
   useEffect(() => {
     fetch("/api/fpl/players")
@@ -112,6 +113,7 @@ export default function ConfirmPage() {
   const completed: number[] = lineup.filter((x): x is number => x !== null);
 
   async function onApprove() {
+    if (!poolAddr) return;
     setBusy(true);
     try {
       await pool.approve();
@@ -128,6 +130,7 @@ export default function ConfirmPage() {
   }
 
   async function onJoin() {
+    if (!poolAddr) return;
     setBusy(true);
     try {
       const tuple = completed as unknown as readonly [
@@ -207,7 +210,9 @@ export default function ConfirmPage() {
         </section>
 
         <section className="pt-5">
-          {pool.hasJoined ? (
+          {!poolAddr ? (
+            <PrimaryCTA label="Loading fecha…" disabled />
+          ) : pool.hasJoined ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70">
               You already joined this fecha.
               <Link
