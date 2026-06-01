@@ -2,16 +2,27 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { DEFAULT_FORMATION, formationSlots } from "@/lib/lineup/formations";
+import { remapOnFormationChange, type Slot } from "@/lib/lineup/validate";
 
 export type PlayerId = number;
-type Lineup = (PlayerId | null)[]; // length 5
-const EMPTY: Lineup = [null, null, null, null, null];
+
+export type Draft = {
+  formation: string;
+  slots: Slot[]; // length 11, ordered by formationSlots(formation)
+  captainId: number | null;
+};
+
+function emptyDraft(formation = DEFAULT_FORMATION): Draft {
+  return { formation, slots: formationSlots(formation).map(() => null), captainId: null };
+}
 
 type LineupDraftState = {
-  byFecha: Record<number, Lineup>;
-  lineupFor: (tid: number) => Lineup;
+  byFecha: Record<number, Draft>;
+  draftFor: (tid: number) => Draft;
+  setFormation: (tid: number, formation: string) => void;
   setSlot: (tid: number, idx: number, id: PlayerId | null) => void;
-  randomFill: (tid: number, allIds: PlayerId[]) => void;
+  setCaptain: (tid: number, id: PlayerId) => void;
   clear: (tid: number) => void;
 };
 
@@ -19,23 +30,35 @@ export const useLineupDraft = create<LineupDraftState>()(
   persist(
     (set, get) => ({
       byFecha: {},
-      lineupFor: (tid) => get().byFecha[tid] ?? EMPTY,
+      draftFor: (tid) => get().byFecha[tid] ?? emptyDraft(),
+      setFormation: (tid, formation) =>
+        set((s) => {
+          const cur = s.byFecha[tid] ?? emptyDraft();
+          if (cur.formation === formation) return s;
+          const slots = remapOnFormationChange(cur.slots, cur.formation, formation);
+          const captainId =
+            cur.captainId != null && slots.includes(cur.captainId) ? cur.captainId : null;
+          return { byFecha: { ...s.byFecha, [tid]: { formation, slots, captainId } } };
+        }),
       setSlot: (tid, idx, id) =>
         set((s) => {
-          const cur = s.byFecha[tid] ?? EMPTY;
-          if (id !== null && cur.includes(id)) return s;
-          const next = [...cur];
-          next[idx] = id;
-          return { byFecha: { ...s.byFecha, [tid]: next } };
+          const cur = s.byFecha[tid] ?? emptyDraft();
+          if (id !== null && cur.slots.includes(id)) return s; // no duplicates
+          const slots = [...cur.slots];
+          const removed = slots[idx];
+          slots[idx] = id;
+          const captainId = removed != null && removed === cur.captainId ? null : cur.captainId;
+          return { byFecha: { ...s.byFecha, [tid]: { ...cur, slots, captainId } } };
         }),
-      randomFill: (tid, allIds) =>
+      setCaptain: (tid, id) =>
         set((s) => {
-          const shuffled = [...allIds].sort(() => Math.random() - 0.5).slice(0, 5);
-          return { byFecha: { ...s.byFecha, [tid]: shuffled } };
+          const cur = s.byFecha[tid] ?? emptyDraft();
+          if (!cur.slots.includes(id)) return s; // captain must be in the XI
+          return { byFecha: { ...s.byFecha, [tid]: { ...cur, captainId: id } } };
         }),
       clear: (tid) =>
-        set((s) => ({ byFecha: { ...s.byFecha, [tid]: [...EMPTY] } })),
+        set((s) => ({ byFecha: { ...s.byFecha, [tid]: emptyDraft() } })),
     }),
-    { name: "pick5-lineup-draft-v2" },
+    { name: "onze-lineup-draft-v1" },
   ),
 );
