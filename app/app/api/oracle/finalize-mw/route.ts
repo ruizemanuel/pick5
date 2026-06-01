@@ -6,12 +6,13 @@ import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { oracleRuns } from "@/lib/db/schema";
-import { aggregateUserScores } from "@/lib/fpl/scoring";
-import { FplScoreProvider } from "@/lib/scoring/fpl-provider";
-import { pick5PoolAbi } from "@/lib/contracts/abi";
+import { aggregateOnzeScores } from "@/lib/scoring/lineup-score";
+import { getProvider } from "@/lib/scoring/providers";
+import { getPhasePoints } from "@/lib/scoring/phase-points";
+import { onzePoolAbi } from "@/lib/contracts/abi";
 import { DEFAULT_NETWORK } from "@/lib/contracts/addresses";
 import { resolvePoolById } from "@/lib/contracts/factory";
-import { fechaRound } from "@/lib/tournaments/seasons";
+import { fechaRound, phaseRounds, seasonForFecha, seasonProvider } from "@/lib/tournaments/seasons";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -39,6 +40,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, reason: `tournamentId ${tournamentId} not in season config` }, { status: 400 });
   }
 
+  const season = seasonForFecha(tournamentId);
+  if (!season) {
+    return NextResponse.json({ ok: false, reason: `tournamentId ${tournamentId} not in any season` }, { status: 400 });
+  }
+  const provider = getProvider(seasonProvider(season));
+  const rounds = phaseRounds(season, tournamentId);
+
   const db = getDb();
   const network = DEFAULT_NETWORK;
   const chain = chainForNetwork(network);
@@ -50,9 +58,9 @@ export async function GET(req: NextRequest) {
   }
 
   const [scoresSubmittedOnChain, finalizedOnChain, emergencyActiveOnChain] = await Promise.all([
-    publicClient.readContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "scoresSubmitted" }) as Promise<boolean>,
-    publicClient.readContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "finalized" }) as Promise<boolean>,
-    publicClient.readContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "emergencyActive" }) as Promise<boolean>,
+    publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "scoresSubmitted" }) as Promise<boolean>,
+    publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "finalized" }) as Promise<boolean>,
+    publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "emergencyActive" }) as Promise<boolean>,
   ]);
 
   if (emergencyActiveOnChain) {
@@ -72,34 +80,38 @@ export async function GET(req: NextRequest) {
 
   // ── Phase 1 — submitScores (only if not already done) ──
   if (!scoresSubmittedOnChain) {
-    const settled = await FplScoreProvider.isRoundSettled(round).catch(() => false);
-    if (!settled) {
-      await db.insert(oracleRuns).values({ mw: round, status: "skipped", error: `round ${round} not settled` });
+    const settledFlags = await Promise.all(rounds.map((r) => provider.isRoundSettled(r).catch(() => false)));
+    if (!settledFlags.every(Boolean)) {
+      await db.insert(oracleRuns).values({ mw: round, status: "skipped", error: `phase rounds ${rounds.join(",")} not all settled` });
       return NextResponse.json({ ok: false, reason: "not settled, will retry" });
     }
-    const roundMap = await FplScoreProvider.getRoundPoints(round);
+    const roundMap = await getPhasePoints(provider, rounds);
 
-    const numParticipants = (await publicClient.readContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "participantsLength" })) as bigint;
+    const numParticipants = (await publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "participantsLength" })) as bigint;
     if (numParticipants === BigInt(0)) {
       return NextResponse.json({ ok: false, reason: "no participants" });
     }
     const participants: `0x${string}`[] = [];
     for (let i = BigInt(0); i < numParticipants; i += BigInt(1)) {
-      participants.push((await publicClient.readContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "participants", args: [i] })) as `0x${string}`);
+      participants.push((await publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "participants", args: [i] })) as `0x${string}`);
     }
-    const lineups: Record<string, readonly [number, number, number, number, number]> = {};
+    const entries: Array<{ user: string; lineup: number[]; captainId: number }> = [];
     for (const user of participants) {
-      lineups[user] = (await publicClient.readContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "getLineup", args: [user] })) as readonly [number, number, number, number, number];
+      const [lineupRaw, captainRaw] = await Promise.all([
+        publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "getLineup", args: [user] }) as Promise<readonly (bigint | number)[]>,
+        publicClient.readContract({ address: poolAddr, abi: onzePoolAbi, functionName: "captainOf", args: [user] }) as Promise<bigint | number>,
+      ]);
+      entries.push({ user, lineup: lineupRaw.map((x) => Number(x)), captainId: Number(captainRaw) });
     }
 
-    const scoreList = aggregateUserScores(lineups, roundMap);
+    const scoreList = aggregateOnzeScores(entries, roundMap);
     const users = scoreList.map((s) => s.user as `0x${string}`);
     const points = scoreList.map((s) => BigInt(s.points));
     const randomSeed = ("0x" + crypto.randomBytes(32).toString("hex")) as `0x${string}`;
 
     const [runRow] = await db.insert(oracleRuns).values({ mw: round, status: "pending", randomSeed }).returning({ id: oracleRuns.id });
     try {
-      submitTxHash = await walletClient.writeContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "submitScores", args: [users, points, BigInt(randomSeed)] });
+      submitTxHash = await walletClient.writeContract({ address: poolAddr, abi: onzePoolAbi, functionName: "submitScores", args: [users, points, BigInt(randomSeed)] });
       await db.update(oracleRuns).set({ status: "submitted", txHash: submitTxHash }).where(eq(oracleRuns.id, runRow.id));
       await publicClient.waitForTransactionReceipt({ hash: submitTxHash });
     } catch (e) {
@@ -113,7 +125,7 @@ export async function GET(req: NextRequest) {
   const [finalizeRunRow] = await db.insert(oracleRuns).values({ mw: round, status: "finalizing" }).returning({ id: oracleRuns.id });
   let finalizeTxHash: `0x${string}`;
   try {
-    finalizeTxHash = await walletClient.writeContract({ address: poolAddr, abi: pick5PoolAbi, functionName: "finalizeAndDistribute" });
+    finalizeTxHash = await walletClient.writeContract({ address: poolAddr, abi: onzePoolAbi, functionName: "finalizeAndDistribute" });
     await db.update(oracleRuns).set({ status: "finalized", txHash: finalizeTxHash }).where(eq(oracleRuns.id, finalizeRunRow.id));
     await publicClient.waitForTransactionReceipt({ hash: finalizeTxHash });
   } catch (e) {
