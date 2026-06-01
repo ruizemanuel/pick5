@@ -4,22 +4,23 @@ import { chainForNetwork } from "@/lib/contracts/chain";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { leaderboardCache } from "@/lib/db/schema";
-import { FplScoreProvider } from "@/lib/scoring/fpl-provider";
-import { pick5PoolAbi } from "@/lib/contracts/abi";
+import { scoreLineup } from "@/lib/scoring/lineup-score";
+import { getProvider } from "@/lib/scoring/providers";
+import { getPhasePoints } from "@/lib/scoring/phase-points";
+import { onzePoolAbi } from "@/lib/contracts/abi";
 import { DEFAULT_NETWORK } from "@/lib/contracts/addresses";
 import { resolvePoolById } from "@/lib/contracts/factory";
-import { getActiveSeason, fechaRound } from "@/lib/tournaments/seasons";
+import { getActiveSeason, fechaRound, phaseRounds, seasonProvider, type Season } from "@/lib/tournaments/seasons";
+import type { ScoreProvider } from "@/lib/scoring/provider";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-type Lineup = readonly [bigint, bigint, bigint, bigint, bigint];
-
 /**
  * Recompute one fecha's per-wallet points into leaderboard_cache, keyed by
  * (tournament_id, wallet). Two sources, branched on the fecha pool's state:
- *   scoresSubmitted=false -> live FPL feed for this fecha's round (provisional)
+ *   scoresSubmitted=false -> live feed for this fecha's phase rounds (provisional, captain doubled)
  *   scoresSubmitted=true  -> immutable on-chain scores[wallet] (drift-proof)
  * Writes a per-fecha rank (RANK within this tournament_id), NULL until points exist.
  * Returns the number of participants written.
@@ -28,25 +29,26 @@ async function recomputeFecha(
   db: ReturnType<typeof getDb>,
   client: Pick<PublicClient, "readContract">,
   tournamentId: number,
-  round: number,
+  provider: ScoreProvider,
+  rounds: number[],
 ): Promise<number> {
   const pool = await resolvePoolById(client, DEFAULT_NETWORK, tournamentId);
   if (!pool) return 0;
 
   const [numParticipants, scoresSubmittedOnChain] = await Promise.all([
-    client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "participantsLength" }) as Promise<bigint>,
-    client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "scoresSubmitted" }) as Promise<boolean>,
+    client.readContract({ address: pool, abi: onzePoolAbi, functionName: "participantsLength" }) as Promise<bigint>,
+    client.readContract({ address: pool, abi: onzePoolAbi, functionName: "scoresSubmitted" }) as Promise<boolean>,
   ]);
   if (numParticipants === BigInt(0)) return 0;
 
   const roundMap = scoresSubmittedOnChain
     ? new Map<number, number>()
-    : await FplScoreProvider.getRoundPoints(round).catch(() => new Map<number, number>());
+    : await getPhasePoints(provider, rounds).catch(() => new Map<number, number>());
 
   const participants: `0x${string}`[] = [];
   for (let i = BigInt(0); i < numParticipants; i += BigInt(1)) {
     participants.push(
-      (await client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "participants", args: [i] })) as `0x${string}`,
+      (await client.readContract({ address: pool, abi: onzePoolAbi, functionName: "participants", args: [i] })) as `0x${string}`,
     );
   }
 
@@ -55,11 +57,14 @@ async function recomputeFecha(
     let pts = 0;
     if (scoresSubmittedOnChain) {
       pts = Number(
-        (await client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "scores", args: [user] })) as bigint,
+        (await client.readContract({ address: pool, abi: onzePoolAbi, functionName: "scores", args: [user] })) as bigint,
       );
     } else {
-      const lineup = (await client.readContract({ address: pool, abi: pick5PoolAbi, functionName: "getLineup", args: [user] })) as Lineup;
-      for (const idBn of lineup) pts += roundMap.get(Number(idBn)) ?? 0;
+      const [lineupRaw, captainRaw] = await Promise.all([
+        client.readContract({ address: pool, abi: onzePoolAbi, functionName: "getLineup", args: [user] }) as Promise<readonly (bigint | number)[]>,
+        client.readContract({ address: pool, abi: onzePoolAbi, functionName: "captainOf", args: [user] }) as Promise<bigint | number>,
+      ]);
+      pts = scoreLineup(lineupRaw.map((x) => Number(x)), Number(captainRaw), roundMap);
     }
     maxPts = Math.max(maxPts, pts);
     await db
@@ -99,24 +104,27 @@ export async function GET(req: NextRequest) {
   const network = DEFAULT_NETWORK;
   const client = createPublicClient({ chain: chainForNetwork(network), transport: http() });
 
+  const season: Season = getActiveSeason();
+  const provider = getProvider(seasonProvider(season));
+
   // ?t=<tournamentId> recomputes one fecha; absent -> every fecha of the active season.
   const tParam = req.nextUrl.searchParams.get("t");
-  let fechas: { tournamentId: number; round: number }[];
+  let tournamentIds: number[];
   if (tParam !== null) {
     const t = Number(tParam);
-    const round = fechaRound(t);
-    if (round === undefined) {
+    if (fechaRound(t) === undefined) {
       return NextResponse.json({ ok: false, reason: `tournamentId ${t} not in season config` }, { status: 400 });
     }
-    fechas = [{ tournamentId: t, round }];
+    tournamentIds = [t];
   } else {
-    fechas = getActiveSeason().fechas;
+    tournamentIds = season.fechas.map((f) => f.tournamentId);
   }
 
   const results: { tournamentId: number; users: number }[] = [];
-  for (const f of fechas) {
-    const users = await recomputeFecha(db, client, f.tournamentId, f.round);
-    results.push({ tournamentId: f.tournamentId, users });
+  for (const tid of tournamentIds) {
+    const rounds = phaseRounds(season, tid);
+    const users = await recomputeFecha(db, client, tid, provider, rounds);
+    results.push({ tournamentId: tid, users });
   }
   return NextResponse.json({ ok: true, fechas: results });
 }
