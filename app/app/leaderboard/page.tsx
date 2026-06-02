@@ -5,6 +5,7 @@ import { Leaderboard } from "@/components/Leaderboard";
 import { SeasonPrizeBanner } from "@/components/SeasonPrizeBanner";
 import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
+import { Wordmark } from "@/components/design/Wordmark";
 import { pick5PoolAbi } from "@/lib/contracts/abi";
 import { DEFAULT_NETWORK } from "@/lib/contracts/addresses";
 import { resolvePoolById } from "@/lib/contracts/factory";
@@ -37,16 +38,14 @@ export default async function LeaderboardPage() {
     <main className="min-h-dvh bg-[#08070D] text-white">
       <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
         <header className="flex items-center justify-between">
-          <span className="font-display text-2xl tracking-[0.2em] text-white">
-            PICK<span className="text-[#00DF7C]">5</span>
-          </span>
+          <Wordmark />
           <ConnectedWalletPill />
         </header>
 
         <section className="pt-6">
           <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">Season · Tabla General</div>
           <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">Tabla General</h1>
-          <p className="mt-2 text-sm text-white/50">Aggregate points across every fecha. The leader after the final fecha wins the season pot.</p>
+          <p className="mt-2 text-sm text-white/50">Puntos agregados de todas las fases. El líder tras la última fase gana el pozo de la temporada.</p>
         </section>
 
         <div className="pt-6">
