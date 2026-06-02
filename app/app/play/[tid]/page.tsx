@@ -14,8 +14,10 @@ import { Stat } from "@/components/design/Stat";
 import { useFechaPool } from "@/hooks/useFechaPool";
 import { useLineup } from "@/hooks/useLineup";
 import { usePool } from "@/hooks/usePool";
-import { fechaNumber, fechaRound } from "@/lib/tournaments/seasons";
-import type { FplPlayerSummary } from "@/lib/fpl/types";
+import { fechaLabel, fechaRound } from "@/lib/tournaments/seasons";
+import type { UiPlayer } from "@/lib/players/uiPlayer";
+import { Wordmark } from "@/components/design/Wordmark";
+import { formationLayout, inferFormation } from "@/lib/lineup/formations";
 
 type LiveStats = {
   mw: number;
@@ -47,9 +49,9 @@ export default function MyTeamPage() {
   const round = fechaRound(tid);
   const { poolAddr, isLoading: poolLoading } = useFechaPool(tid);
   const { address, isConnected } = useAccount();
-  const { lineup, refetch: refetchLineup } = useLineup(poolAddr);
+  const { lineup, captainId, refetch: refetchLineup } = useLineup(poolAddr);
   const pool = usePool(poolAddr);
-  const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
+  const [players, setPlayers] = useState<UiPlayer[]>([]);
   const [playersLoaded, setPlayersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(true);
   const [live, setLive] = useState<LiveStats | null>(null);
@@ -71,9 +73,9 @@ export default function MyTeamPage() {
   }, [address, refetchLineup]);
 
   useEffect(() => {
-    fetch("/api/fpl/players")
+    fetch("/api/players")
       .then((r) => r.json())
-      .then((d: { players: FplPlayerSummary[] }) => setPlayers(d.players))
+      .then((d: { players: UiPlayer[] }) => setPlayers(d.players))
       .catch(() => setPlayers([]))
       .finally(() => setPlayersLoaded(true));
   }, []);
@@ -107,7 +109,7 @@ export default function MyTeamPage() {
   }, []);
 
   const playerMap = useMemo(() => {
-    const m = new Map<number, FplPlayerSummary>();
+    const m = new Map<number, UiPlayer>();
     for (const p of players) m.set(p.id, p);
     return m;
   }, [players]);
@@ -117,18 +119,27 @@ export default function MyTeamPage() {
     return lineup.map((x) => Number(x)).filter((id) => id !== 0);
   }, [lineup]);
 
-  const hasLineup = ids.length === 5;
+  const hasLineup = ids.length === 11;
   const allMapped = hasLineup && ids.every((id) => playerMap.has(id));
   const haveChainResult = lineup !== undefined && !refreshing;
   const showLoadingState =
     !haveChainResult || (hasLineup && (!playersLoaded || !allMapped));
   const showNoLineupState = haveChainResult && playersLoaded && !hasLineup;
 
+  const positions = useMemo(
+    () => ids.map((id) => playerMap.get(id)?.position ?? "MID"),
+    [ids, playerMap],
+  );
+  const formation = useMemo(() => inferFormation(positions), [positions]);
+  const layout = useMemo(() => formationLayout(formation), [formation]);
+  const captainIndex = useMemo(
+    () => (captainId != null ? ids.findIndex((id) => id === captainId) : -1),
+    [ids, captainId],
+  );
+
   const pitchSlots: PitchSlot[] = useMemo(() => {
-    if (!lineup) return Array(5).fill({ empty: true } as const);
-    return lineup.map((idBn) => {
-      const id = Number(idBn);
-      if (id === 0) return { empty: true };
+    if (!lineup) return Array(11).fill({ empty: true } as const);
+    return ids.map((id) => {
       const p = playerMap.get(id);
       if (!p) {
         return {
@@ -148,7 +159,7 @@ export default function MyTeamPage() {
         position: p.position,
       };
     });
-  }, [lineup, playerMap]);
+  }, [lineup, ids, playerMap]);
 
   const finalized = pool.isFinalized;
   const lockMs =
@@ -157,13 +168,7 @@ export default function MyTeamPage() {
   const lockParts = lockMs
     ? partsBetween(new Date(lockMs), now)
     : { expired: false, days: 0, hours: 0, mins: 0 };
-  const fechaNo = fechaNumber(tid) ?? (Number.isInteger(tid) ? tid + 1 : null);
-  const fechaLabel =
-    fechaNo === null
-      ? "Fecha"
-      : round !== undefined
-        ? `Fecha ${fechaNo} · GW${round}`
-        : `Fecha ${fechaNo}`;
+  const phaseLabel = fechaLabel(tid);
   const statusLabel = finalized ? "FINAL" : isLocked ? "LIVE" : "LOCKS IN";
   const statusValue = finalized
     ? "Settled"
@@ -196,9 +201,7 @@ export default function MyTeamPage() {
     return (
       <main className="min-h-dvh bg-[#08070D] text-white">
         <div className="mx-auto flex min-h-dvh max-w-[440px] flex-col items-center justify-center gap-4 px-5 pb-24">
-          <span className="font-display text-3xl tracking-[0.2em] text-white">
-            PICK<span className="text-[#00DF7C]">5</span>
-          </span>
+          <Wordmark />
           <p className="text-center text-white/70">
             Connect your wallet to see your lineup.
           </p>
@@ -217,14 +220,12 @@ export default function MyTeamPage() {
       <main className="min-h-dvh bg-[#08070D] text-white">
         <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
           <header className="flex items-center justify-between">
-            <span className="font-display text-2xl tracking-[0.2em] text-white">
-              PICK<span className="text-[#00DF7C]">5</span>
-            </span>
+            <Wordmark />
             <ConnectedWalletPill />
           </header>
           <section className="pt-6">
             <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">
-              {fechaLabel}
+              {phaseLabel}
             </div>
             <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
               My Team
@@ -253,9 +254,7 @@ export default function MyTeamPage() {
     <main className="min-h-dvh bg-[#08070D] text-white">
       <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
         <header className="flex items-center justify-between">
-          <span className="font-display text-2xl tracking-[0.2em] text-white">
-            PICK<span className="text-[#00DF7C]">5</span>
-          </span>
+          <Wordmark />
           <ConnectedWalletPill />
         </header>
 
@@ -277,10 +276,10 @@ export default function MyTeamPage() {
             />
             <span>
               {finalized
-                ? `${fechaLabel} settled`
+                ? `${phaseLabel} settled`
                 : isLocked
-                  ? `${fechaLabel} live`
-                  : fechaLabel}
+                  ? `${phaseLabel} live`
+                  : phaseLabel}
             </span>
           </div>
           <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
@@ -320,7 +319,7 @@ export default function MyTeamPage() {
                 No Lineup Yet
               </div>
               <p className="mt-2 text-sm text-white/50">
-                You haven&apos;t joined this tournament. Pick your 5 to enter.
+                You haven&apos;t joined this tournament. Armá tu XI para entrar.
               </p>
             </div>
             <PrimaryCTALink href={`/play/${tid}/build` as Route} label="Build Lineup" />
@@ -355,7 +354,7 @@ export default function MyTeamPage() {
             )}
 
             <section className="pt-5">
-              <Pitch slots={pitchSlots} />
+              <Pitch slots={pitchSlots} positions={layout} captainIndex={captainIndex} />
             </section>
 
             <section className="pt-5">
@@ -422,7 +421,7 @@ export default function MyTeamPage() {
                             {pts}
                           </div>
                           <div className="text-[9px] uppercase tracking-wider text-white/40">
-                            {round !== undefined ? `GW${round}` : "pts"}
+                            pts
                           </div>
                         </>
                       }
