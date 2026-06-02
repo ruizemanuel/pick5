@@ -49,3 +49,23 @@ export function formationLayout(formation: string): PitchPosition[] {
     ...row("FWD", f.fwd),
   ];
 }
+
+/**
+ * Reconstruct a formation key from a set of player positions (order-independent).
+ * The on-chain lineup stores ids only; the team-view derives the shape from each
+ * player's position. Counts DEF/MID/FWD and matches a known formation; falls back
+ * to DEFAULT_FORMATION if the counts don't match any valid shape.
+ */
+export function inferFormation(positions: string[]): string {
+  let def = 0, mid = 0, fwd = 0;
+  for (const p of positions) {
+    if (p === "DEF") def++;
+    else if (p === "MID") mid++;
+    else if (p === "FWD") fwd++;
+  }
+  for (const key of FORMATION_KEYS) {
+    const f = FORMATIONS[key];
+    if (f.def === def && f.mid === mid && f.fwd === fwd) return key;
+  }
+  return DEFAULT_FORMATION;
+}
