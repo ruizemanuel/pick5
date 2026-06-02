@@ -11,11 +11,12 @@ import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { PlayerRow } from "@/components/design/PlayerRow";
 import { PrimaryCTA } from "@/components/design/PrimaryCTA";
+import { Wordmark } from "@/components/design/Wordmark";
 import { useLineupDraft } from "@/stores/lineupDraft";
 import { useFechaPool } from "@/hooks/useFechaPool";
 import { usePool } from "@/hooks/usePool";
 import { posthog } from "@/lib/posthog";
-import type { FplPlayerSummary } from "@/lib/fpl/types";
+import type { UiPlayer } from "@/lib/players/uiPlayer";
 
 async function celebrate() {
   if (typeof window === "undefined") return;
@@ -59,35 +60,35 @@ export default function ConfirmPage() {
   const { poolAddr } = useFechaPool(tid);
   const { isConnected } = useAccount();
   const { switchChain, isPending: switchPending } = useSwitchChain();
-  const { lineupFor, clear } = useLineupDraft();
-  const lineup = lineupFor(tid);
+  const draft = useLineupDraft((s) => s.draftFor(tid));
+  const clear = useLineupDraft((s) => s.clear);
   const pool = usePool(poolAddr);
   const [step, setStep] = useState<"approve" | "join">("approve");
   const [busy, setBusy] = useState(false);
   const [didJoin, setDidJoin] = useState(false);
-  const [players, setPlayers] = useState<FplPlayerSummary[]>([]);
+  const [players, setPlayers] = useState<UiPlayer[]>([]);
 
   useEffect(() => {
     // Once the join tx confirms we navigate to /play/[tid] and clear the draft
     // explicitly. Don't bounce back to the build step during that transition.
     if (didJoin) return;
-    if (lineup.some((x) => x === null)) {
+    if (draft.slots.some((x) => x === null) || draft.captainId == null) {
       router.replace(`/play/${tid}/build` as Route);
       return;
     }
     if (!poolAddr) return;
     setStep(pool.allowance >= parseUnits("1", 6) ? "join" : "approve");
-  }, [lineup, pool.allowance, router, didJoin, poolAddr, tid]);
+  }, [draft, pool.allowance, router, didJoin, poolAddr, tid]);
 
   useEffect(() => {
-    fetch("/api/fpl/players")
+    fetch("/api/players")
       .then((r) => r.json())
-      .then((d: { players: FplPlayerSummary[] }) => setPlayers(d.players))
+      .then((d: { players: UiPlayer[] }) => setPlayers(d.players))
       .catch(() => setPlayers([]));
   }, []);
 
   const playerMap = useMemo(() => {
-    const m = new Map<number, FplPlayerSummary>();
+    const m = new Map<number, UiPlayer>();
     for (const p of players) m.set(p.id, p);
     return m;
   }, [players]);
@@ -108,9 +109,9 @@ export default function ConfirmPage() {
       </main>
     );
   }
-  if (lineup.some((x) => x === null)) return null;
+  if (draft.slots.some((x) => x === null) || draft.captainId == null) return null;
 
-  const completed: number[] = lineup.filter((x): x is number => x !== null);
+  const completed: number[] = draft.slots.filter((x): x is number => x !== null);
 
   async function onApprove() {
     if (!poolAddr) return;
@@ -133,14 +134,7 @@ export default function ConfirmPage() {
     if (!poolAddr) return;
     setBusy(true);
     try {
-      const tuple = completed as unknown as readonly [
-        number,
-        number,
-        number,
-        number,
-        number,
-      ];
-      await pool.join(tuple);
+      await pool.join(completed, draft.captainId!);
       setDidJoin(true);
       posthog.capture("deposit_completed", { amount_usdt: 1 });
       toast.success("You're in 🎉");
@@ -158,9 +152,7 @@ export default function ConfirmPage() {
     <main className="min-h-dvh bg-[#08070D] text-white">
       <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
         <header className="flex items-center justify-between">
-          <span className="font-display text-2xl tracking-[0.2em] text-white">
-            PICK<span className="text-[#00DF7C]">5</span>
-          </span>
+          <Wordmark />
           <ConnectedWalletPill />
         </header>
 
@@ -172,13 +164,14 @@ export default function ConfirmPage() {
             Confirm Lineup
           </h1>
           <p className="mt-2 text-sm text-white/50">
-            Review your 5 picks. Submit to lock them in for this fecha.
+            Revisá tu XI y tu capitán.
           </p>
         </section>
 
         <section className="pt-5 space-y-2">
           {completed.map((id, i) => {
             const p = playerMap.get(id);
+            const isCaptain = id === draft.captainId;
             return (
               <PlayerRow
                 key={`${id}-${i}`}
@@ -188,6 +181,7 @@ export default function ConfirmPage() {
                 name={p?.name ?? `Player #${id}`}
                 team={p?.team}
                 position={p?.position}
+                right={isCaptain ? <span className="text-[#F5C842] font-bold text-sm">C</span> : undefined}
               />
             );
           })}
