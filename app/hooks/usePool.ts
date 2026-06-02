@@ -2,7 +2,7 @@
 
 import { useAccount, useReadContract, useWriteContract, usePublicClient } from "wagmi";
 import { erc20Abi, parseUnits } from "viem";
-import { pick5PoolAbi } from "@/lib/contracts/abi";
+import { onzePoolAbi } from "@/lib/contracts/abi";
 import { ADDRESSES, DEFAULT_NETWORK, CHAIN_ID } from "@/lib/contracts/addresses";
 import { useActiveTournament } from "@/hooks/useActiveTournament";
 
@@ -34,7 +34,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const hasJoined = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "hasJoined",
@@ -43,7 +43,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const lockTime = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "lockTime",
@@ -51,7 +51,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const endTime = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "endTime",
@@ -59,7 +59,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const scoresSubmitted = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "scoresSubmitted",
@@ -67,7 +67,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const winner = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "winner",
@@ -75,7 +75,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const finalized = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "finalized",
@@ -83,7 +83,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const prizeAmount = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "prizeAmount",
@@ -91,7 +91,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const prizeClaimed = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "prizeClaimed",
@@ -99,7 +99,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
   });
 
   const depositWithdrawn = useReadContract({
-    abi: pick5PoolAbi,
+    abi: onzePoolAbi,
     address: poolAddr,
     chainId,
     functionName: "depositWithdrawn",
@@ -129,7 +129,7 @@ export function usePool(poolAddrParam?: `0x${string}`) {
       try {
         const result = await publicClient.readContract({
           address: poolAddr,
-          abi: pick5PoolAbi,
+          abi: onzePoolAbi,
           functionName: "getLineup",
           args: [address],
         });
@@ -176,25 +176,25 @@ export function usePool(poolAddrParam?: `0x${string}`) {
         functionName: "approve",
         args: [poolAddr, parseUnits("1", 6)],
       }),
-    join: async (lineup: readonly [number, number, number, number, number]) => {
+    join: async (lineup: number[], captainId: number) => {
       const hash = await writeAndWait({
-        abi: pick5PoolAbi,
+        abi: onzePoolAbi,
         address: poolAddr,
         functionName: "joinTournament",
-        args: [lineup],
+        args: [lineup, captainId],
       });
       await pollLineupSettled();
       return hash;
     },
     claimPrize: () =>
       writeAndWait({
-        abi: pick5PoolAbi,
+        abi: onzePoolAbi,
         address: poolAddr,
         functionName: "claimPrize",
       }),
     withdrawDeposit: () =>
       writeAndWait({
-        abi: pick5PoolAbi,
+        abi: onzePoolAbi,
         address: poolAddr,
         functionName: "withdrawDeposit",
       }),
