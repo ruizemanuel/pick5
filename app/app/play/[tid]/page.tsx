@@ -14,7 +14,7 @@ import { Stat } from "@/components/design/Stat";
 import { useFechaPool } from "@/hooks/useFechaPool";
 import { useLineup } from "@/hooks/useLineup";
 import { usePool } from "@/hooks/usePool";
-import { fechaLabel, fechaRound } from "@/lib/tournaments/seasons";
+import { fechaLabel, fechaRound, getActiveSeason, seasonProvider } from "@/lib/tournaments/seasons";
 import type { UiPlayer } from "@/lib/players/uiPlayer";
 import { Wordmark } from "@/components/design/Wordmark";
 import { formationLayout, inferFormation } from "@/lib/lineup/formations";
@@ -47,6 +47,10 @@ export default function MyTeamPage() {
   const params = useParams<{ tid: string }>();
   const tid = Number(params.tid);
   const round = fechaRound(tid);
+  // The per-player live overlay uses the FPL live feed; only fetch it when the active
+  // season's provider is FPL. For the World Cup (no live feed in v1) `live` stays null
+  // so the team-view shows the final/cached score and never reads FPL-shaped data.
+  const liveEnabled = seasonProvider(getActiveSeason()) === "fpl";
   const { poolAddr, isLoading: poolLoading } = useFechaPool(tid);
   const { address, isConnected } = useAccount();
   const { lineup, captainId, refetch: refetchLineup } = useLineup(poolAddr);
@@ -81,7 +85,7 @@ export default function MyTeamPage() {
   }, []);
 
   useEffect(() => {
-    if (round === undefined) {
+    if (round === undefined || !liveEnabled) {
       setLive(null);
       return;
     }
@@ -89,7 +93,7 @@ export default function MyTeamPage() {
       .then((r) => r.json())
       .then((d: LiveStats) => setLive(d))
       .catch(() => setLive(null));
-  }, [round]);
+  }, [round, liveEnabled]);
 
   useEffect(() => {
     if (!address || !Number.isInteger(tid)) {
@@ -182,7 +186,7 @@ export default function MyTeamPage() {
       : "Until kickoff";
 
   const currentMwPoints = useMemo(() => {
-    if (!live || ids.length === 0) return 0;
+    if (!live?.stats || ids.length === 0) return 0;
     return ids.reduce((sum, id) => sum + (live.stats[id]?.points ?? 0), 0);
   }, [live, ids]);
 
@@ -392,10 +396,10 @@ export default function MyTeamPage() {
               <div className="mt-2 space-y-2">
                 {ids.map((id, i) => {
                   const p = playerMap.get(id);
-                  const pts = live?.stats[id]?.points ?? 0;
-                  const mins = live?.stats[id]?.minutes ?? 0;
-                  const goals = live?.stats[id]?.goals ?? 0;
-                  const assists = live?.stats[id]?.assists ?? 0;
+                  const pts = live?.stats?.[id]?.points ?? 0;
+                  const mins = live?.stats?.[id]?.minutes ?? 0;
+                  const goals = live?.stats?.[id]?.goals ?? 0;
+                  const assists = live?.stats?.[id]?.assists ?? 0;
                   const subline = finalized
                     ? mins === 0
                       ? "Did not play"
