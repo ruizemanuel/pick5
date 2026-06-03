@@ -17,7 +17,7 @@ export type PlayerSlotProps = {
   captain?: boolean;
 };
 
-const SIZE_PX: Record<PlayerSlotSize, number> = {
+export const SIZE_PX: Record<PlayerSlotSize, number> = {
   lg: 80,
   md: 56,
   sm: 36,

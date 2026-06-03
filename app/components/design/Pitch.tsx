@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { PitchSVG } from "./PitchSVG";
-import { PlayerSlot, type PlayerSlotProps } from "./PlayerSlot";
+import { PlayerSlot, SIZE_PX, type PlayerSlotProps, type PlayerSlotSize } from "./PlayerSlot";
 import type { PitchPosition } from "@/lib/lineup/formations";
 
 export type PitchSlot = (PlayerSlotProps & { empty?: false }) | { empty: true };
@@ -51,7 +51,7 @@ export function Pitch({ slots, positions = PENTAGON_POSITIONS, captainIndex = nu
         const slot = slots[i];
         const interactive = !!onSlotClick;
         const content: ReactNode = !slot || slot.empty ? (
-          <EmptyPitchSlot label={emptyLabel} />
+          <EmptyPitchSlot label={emptyLabel} size={slotSize} />
         ) : (
           <PlayerSlot {...slot} size={slot.size ?? slotSize} captain={i === captainIndex} />
         );
@@ -85,14 +85,17 @@ export function Pitch({ slots, positions = PENTAGON_POSITIONS, captainIndex = nu
   );
 }
 
-function EmptyPitchSlot({ label }: { label: string }) {
+function EmptyPitchSlot({ label, size }: { label: string; size: PlayerSlotSize }) {
+  const px = SIZE_PX[size];
+  const plusCls = size === "lg" ? "text-2xl" : size === "md" ? "text-xl" : "text-base";
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className="size-20 rounded-full border border-dashed border-white/30 bg-white/5 backdrop-blur flex items-center justify-center animate-pulse motion-reduce:animate-none"
+        className="rounded-full border border-dashed border-white/30 bg-white/5 backdrop-blur flex items-center justify-center animate-pulse motion-reduce:animate-none"
+        style={{ width: px, height: px }}
         aria-label="Empty slot"
       >
-        <span className="text-2xl text-white/40 leading-none">+</span>
+        <span className={`${plusCls} text-white/40 leading-none`}>+</span>
       </div>
       <span className="text-[10px] uppercase tracking-wider text-white/50 font-medium">
         {label}
