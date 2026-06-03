@@ -30,7 +30,7 @@ export function SeasonPrizeBanner({ fechasSettled, fechasTotal }: { fechasSettle
           {usd(s.seedAmount)}<span className="ml-1.5 text-lg tracking-wide text-[#F5C842]">+ yield</span>
         </div>
         <div className="mt-1.5 text-xs font-medium text-[#F5C842]/85">
-          {fechasSettled} de {fechasTotal} fases settled · campeón tras la última fase
+          {fechasSettled} of {fechasTotal} phases settled · champion after the final phase
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export function SeasonPrizeBanner({ fechasSettled, fechasTotal }: { fechasSettle
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[#F5C842]/45 p-6 text-center shadow-[0_10px_40px_rgba(245,200,66,0.18)] [background:radial-gradient(120%_120%_at_50%_0,rgba(245,200,66,0.16),rgba(245,200,66,0.03)_60%,transparent)]">
       <div className="text-3xl">🏆</div>
-      <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-[#F5C842]">Campeón de la temporada</div>
+      <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-[#F5C842]">Season champion</div>
       <div className="mt-2.5 font-mono text-sm text-white">{truncate(s.champion)}</div>
       <div className="font-display mt-3 text-4xl text-white [text-shadow:0_0_24px_rgba(245,200,66,0.3)]">{usd(s.prizeAmount)}</div>
       <div className="mt-0.5 text-[11px] text-[#F5C842]/85">seed + Aave yield</div>

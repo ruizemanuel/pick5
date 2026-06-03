@@ -101,9 +101,12 @@ export function PlayerPicker({
                 <button
                   type="button"
                   onClick={onCaptain}
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-white/70 transition cursor-pointer hover:bg-white/10"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#F5C842]/40 bg-[#F5C842]/10 px-3 py-2 text-xs font-semibold text-[#F5C842] transition cursor-pointer hover:bg-[#F5C842]/20"
                 >
-                  Hacer capitán
+                  <span className="flex size-4 items-center justify-center rounded-full bg-[#F5C842] text-[9px] font-bold text-black">
+                    C
+                  </span>
+                  Make captain
                 </button>
               )}
               {onClear && (

@@ -234,7 +234,7 @@ export default function MyTeamPage() {
               href={"/tournaments" as Route}
               className="mt-4 inline-flex items-center gap-1 text-xs text-white/50 hover:text-white/80"
             >
-              ← Todas las fechas
+              ← All phases
             </Link>
           </section>
           <section className="pt-6">
@@ -319,7 +319,7 @@ export default function MyTeamPage() {
                 No Lineup Yet
               </div>
               <p className="mt-2 text-sm text-white/50">
-                You haven&apos;t joined this tournament. Armá tu XI para entrar.
+                You haven&apos;t joined this tournament. Build your XI to enter.
               </p>
             </div>
             <PrimaryCTALink href={`/play/${tid}/build` as Route} label="Build Lineup" />

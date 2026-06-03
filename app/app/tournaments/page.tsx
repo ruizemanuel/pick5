@@ -75,8 +75,8 @@ export default async function TournamentsPage() {
 
         <section className="pt-6">
           <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">{season.label}</div>
-          <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">Fases</h1>
-          <p className="mt-2 text-sm text-white/50">Play any matchday. Your points across all fechas decide the season champion.</p>
+          <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">Phases</h1>
+          <p className="mt-2 text-sm text-white/50">Play any phase. Your points across all phases decide the season champion.</p>
         </section>
 
         <div className="pt-6">
@@ -84,15 +84,15 @@ export default async function TournamentsPage() {
             <div className="relative overflow-hidden rounded-2xl border border-[#F5C842]/30 bg-gradient-to-br from-[#F5C842]/10 to-[#F5C842]/[0.02] p-5 shadow-[0_8px_30px_rgba(245,200,66,0.10)]">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#F5C842]">Season prize · growing in Aave</div>
               <div className="font-display mt-1.5 text-5xl leading-none text-white [text-shadow:0_0_24px_rgba(245,200,66,0.25)]">{usd(seedAmount)}<span className="ml-1.5 text-lg tracking-wide text-[#F5C842]">+ yield</span></div>
-              <div className="mt-1.5 text-xs font-medium text-[#F5C842]/85">{seasonFinalized ? "Champion crowned" : "Goes to the season champion"} · View Tabla General →</div>
+              <div className="mt-1.5 text-xs font-medium text-[#F5C842]/85">{seasonFinalized ? "Champion crowned" : "Goes to the season champion"} · View Standings →</div>
             </div>
           </Link>
         </div>
 
-        <div className="pt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Fases</div>
+        <div className="pt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Phases</div>
         <div className="mt-3 space-y-2.5">
           {rows.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/50">No fechas yet · check back soon.</div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/50">No phases yet · check back soon.</div>
           ) : (
             rows.map((r) => <FechaCard key={r.tournamentId} {...r} />)
           )}

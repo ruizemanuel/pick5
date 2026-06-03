@@ -37,6 +37,9 @@ export function PlayerSlot({
   const px = SIZE_PX[size];
   const labelInitialsCls =
     size === "lg" ? "text-2xl" : size === "md" ? "text-base" : "text-xs";
+  // On the pitch 11 names sit close together; show the surname only and cap the
+  // width so adjacent labels never overlap.
+  const shortName = name ? name.trim().split(/\s+/).slice(-1)[0] : undefined;
   const { src: resolvedSrc, onError: onPhotoError } = useFallbackPhoto(photoUrl);
   const showPhoto = !!resolvedSrc;
 
@@ -75,7 +78,7 @@ export function PlayerSlot({
         {captain && (
           <span
             className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-[#F5C842] text-[10px] font-bold text-black"
-            aria-label="Capitán"
+            aria-label="Captain"
           >
             C
           </span>
@@ -83,9 +86,9 @@ export function PlayerSlot({
       </div>
       {showLabel && (name || team || position) && (
         <div className="flex flex-col items-center gap-0.5 text-center">
-          {name && (
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-white">
-              {name}
+          {shortName && (
+            <span className="max-w-[5rem] truncate text-[10px] font-semibold uppercase tracking-wide text-white">
+              {shortName}
             </span>
           )}
           {(team || position) && (

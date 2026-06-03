@@ -164,7 +164,7 @@ export default function ConfirmPage() {
             Confirm Lineup
           </h1>
           <p className="mt-2 text-sm text-white/50">
-            Revisá tu XI y tu capitán.
+            Review your XI and captain.
           </p>
         </section>
 
@@ -198,7 +198,7 @@ export default function ConfirmPage() {
               </span>
             </div>
             <p className="mt-1 text-[11px] text-white/40">
-              Refundable in full after this fecha settles, regardless of outcome.
+              Refundable in full after this phase settles, regardless of outcome.
             </p>
           </div>
         </section>

@@ -24,6 +24,8 @@ export type PitchProps = {
 };
 
 export function Pitch({ slots, positions = PENTAGON_POSITIONS, captainIndex = null, onSlotClick, emptyLabel = "Pick" }: PitchProps) {
+  // A full XI (11) needs smaller avatars than the 5-slot pentagon so rows don't crowd.
+  const slotSize = positions.length > 6 ? "md" : "lg";
   return (
     <div
       className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl"
@@ -51,7 +53,7 @@ export function Pitch({ slots, positions = PENTAGON_POSITIONS, captainIndex = nu
         const content: ReactNode = !slot || slot.empty ? (
           <EmptyPitchSlot label={emptyLabel} />
         ) : (
-          <PlayerSlot {...slot} size={slot.size ?? "lg"} captain={i === captainIndex} />
+          <PlayerSlot {...slot} size={slot.size ?? slotSize} captain={i === captainIndex} />
         );
         const wrapperCls =
           "absolute -translate-x-1/2 -translate-y-1/2" +

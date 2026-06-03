@@ -94,14 +94,14 @@ export default async function LandingPage() {
             Tournament Live
           </div>
           <h1 className="font-display mt-2 text-[44px] leading-[0.95] tracking-tight">
-            Armá tu XI.<br />
-            Ganá la fase.<br />
-            <span className="text-[#00DF7C]">No perdés nada.</span>
+            Build your XI.<br />
+            Win the phase.<br />
+            <span className="text-[#00DF7C]">Lose nothing.</span>
           </h1>
           <p className="mt-3 max-w-[34ch] text-sm text-white/60">
-            Depositá $1 USDT y armá tu XI del Mundial en cada fase. Tu depósito
-            genera yield en Aave V3 — el de mayor puntaje se lleva todo el pozo.
-            Recuperás tu $1 cuando la fase cierra.
+            Deposit $1 USDT and build your World Cup XI each phase. Your stake
+            earns yield in Aave V3 — the top scorer takes the whole pot. Get
+            your $1 back when the phase closes.
           </p>
         </section>
 
@@ -272,8 +272,8 @@ export default async function LandingPage() {
                 </span>
               </h1>
               <p className="lp-tagline lp-anim lp-anim-d6">
-                <b>$1 USDT</b> para jugar. El XI con mayor puntaje se lleva el yield de Aave V3 más el{" "}
-                <b>seed de {fmt(prizeUsd)}</b>. Todos los demás recuperan su dólar al cierre de la fase.
+                <b>$1 USDT</b> to play. The top-scoring XI takes the Aave V3 yield plus a{" "}
+                <b>{fmt(prizeUsd)} seed</b>. Everyone else gets their dollar back when the phase closes.
               </p>
               <DesktopTicketCTA />
             </div>

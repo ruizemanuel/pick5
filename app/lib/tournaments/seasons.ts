@@ -32,17 +32,17 @@ export const SEASONS: Season[] = [
   },
   {
     seasonId: 1, // PLACEHOLDER — Tanda 5 sets the real SeasonPool id at deploy.
-    label: "Copa del Mundo 2026",
+    label: "World Cup 2026",
     provider: "fifa-wc",
     // tournamentId values are PLACEHOLDERS. Tanda 5 deploys the Onze factory + pools
     // and replaces these with the real on-chain ids. Until then `useFechaPool` resolves
-    // them to a zero address and the builder gates the join ("aún no abierto").
+    // them to a zero address and the builder gates the join ("not open yet").
     fechas: [
-      { tournamentId: 100, round: 1, rounds: [1, 2, 3], label: "Fase de grupos", budget: 100 },
-      { tournamentId: 101, round: 4, rounds: [4], label: "16avos", budget: 105 },
-      { tournamentId: 102, round: 5, rounds: [5], label: "Octavos", budget: 105 },
-      { tournamentId: 103, round: 6, rounds: [6], label: "Cuartos", budget: 105 },
-      { tournamentId: 104, round: 7, rounds: [7], label: "Semis", budget: 105 },
+      { tournamentId: 100, round: 1, rounds: [1, 2, 3], label: "Group Stage", budget: 100 },
+      { tournamentId: 101, round: 4, rounds: [4], label: "Round of 32", budget: 105 },
+      { tournamentId: 102, round: 5, rounds: [5], label: "Round of 16", budget: 105 },
+      { tournamentId: 103, round: 6, rounds: [6], label: "Quarter-finals", budget: 105 },
+      { tournamentId: 104, round: 7, rounds: [7], label: "Semi-finals", budget: 105 },
       { tournamentId: 105, round: 8, rounds: [8], label: "Final", budget: 105 },
     ],
   },

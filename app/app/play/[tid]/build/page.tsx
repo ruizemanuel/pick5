@@ -111,13 +111,13 @@ export default function BuildPage() {
 
           <section className="pt-6">
             <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">
-              Próximamente
+              Coming soon
             </div>
             <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
-              Aún no abierto
+              Not open yet
             </h1>
             <p className="mt-2 text-sm text-white/50">
-              Esta fase todavía no abrió. Volvé cuando arranque.
+              This phase hasn&apos;t opened yet. Come back when it starts.
             </p>
           </section>
         </div>
@@ -141,10 +141,10 @@ export default function BuildPage() {
               Entries closed
             </div>
             <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
-              Fecha locked
+              Phase locked
             </h1>
             <p className="mt-2 text-sm text-white/50">
-              Entries for this fecha are closed. New lineups can no longer be
+              Entries for this phase are closed. New lineups can no longer be
               submitted.
             </p>
           </section>
@@ -176,11 +176,10 @@ export default function BuildPage() {
             Your lineup
           </div>
           <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
-            Armá tu XI
+            Build your XI
           </h1>
           <p className="mt-2 text-sm text-white/50">
-            Elegí formación, tocá un slot y completá tu equipo dentro del
-            presupuesto.
+            Pick a formation, tap a slot, and fill your team within budget.
           </p>
         </section>
 
@@ -189,7 +188,7 @@ export default function BuildPage() {
           <div
             className="flex gap-2 overflow-x-auto"
             role="tablist"
-            aria-label="Elegir formación"
+            aria-label="Choose formation"
           >
             {FORMATION_KEYS.map((key) => {
               const active = draft.formation === key;
@@ -230,7 +229,7 @@ export default function BuildPage() {
               >
                 {(budget - spent).toFixed(1)}M
               </span>{" "}
-              libre
+              left
             </span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
@@ -256,12 +255,20 @@ export default function BuildPage() {
 
         {/* CTA */}
         <section className="pt-5 space-y-2">
+          {filled === 11 && draft.captainId == null && (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-[#F5C842]/40 bg-[#F5C842]/10 px-3 py-2.5 text-center text-sm font-semibold text-[#F5C842]">
+              <span className="flex size-5 items-center justify-center rounded-full bg-[#F5C842] text-[11px] font-bold text-black">
+                C
+              </span>
+              Tap a player to set your captain
+            </div>
+          )}
           <PrimaryCTA
-            label={`Continuar · ${filled} / 11`}
+            label={`Continue · ${filled} / 11`}
             disabled={!v.ok}
             onClick={() => router.push(`/play/${tid}/confirm` as Route)}
           />
-          {!v.ok && v.reason && (
+          {!v.ok && v.reason && !(filled === 11 && draft.captainId == null) && (
             <p className="text-center text-xs text-white/50">{v.reason}</p>
           )}
         </section>

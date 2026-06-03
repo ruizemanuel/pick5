@@ -10,7 +10,7 @@ import {
 describe("WC season config", () => {
   it("makes the World Cup the active season", () => {
     const s = getActiveSeason();
-    expect(s.label).toBe("Copa del Mundo 2026");
+    expect(s.label).toBe("World Cup 2026");
     expect(seasonProvider(s)).toBe("fifa-wc");
     expect(s.fechas).toHaveLength(6);
   });
@@ -25,7 +25,7 @@ describe("WC season config", () => {
   it("exposes per-phase budget (100 groups / 105 KO) and label", () => {
     expect(fechaBudget(100)).toBe(100);
     expect(fechaBudget(101)).toBe(105);
-    expect(fechaLabel(100)).toBe("Fase de grupos");
+    expect(fechaLabel(100)).toBe("Group Stage");
     expect(fechaLabel(105)).toBe("Final");
   });
 });

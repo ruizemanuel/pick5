@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 export const runtime = "nodejs";
 export const alt =
-  "Onze — Fantasy XI del Mundial on-chain en Celo. Armá tu equipo, ganá la fase, no perdés nada.";
+  "Onze — On-chain World Cup Fantasy XI on Celo. Build your team, win the phase, lose nothing.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -102,9 +102,9 @@ export default async function Image() {
               flexDirection: "column",
             }}
           >
-            <span>Armá tu XI.</span>
-            <span>Ganá la fase.</span>
-            <span style={{ color: "#00DF7C" }}>No perdés nada.</span>
+            <span>Build your XI.</span>
+            <span>Win the phase.</span>
+            <span style={{ color: "#00DF7C" }}>Lose nothing.</span>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export default async function Image() {
             color: "rgba(255,255,255,0.55)",
           }}
         >
-          <span style={{ marginLeft: 4 }}>Fantasy XI del Mundial on-chain en Celo</span>
+          <span style={{ marginLeft: 4 }}>On-chain World Cup Fantasy XI on Celo</span>
           <span style={{ marginRight: 2 }}>ERC-8004 verified AI Coach</span>
         </div>
       </div>

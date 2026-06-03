@@ -13,12 +13,12 @@ export function validateLineup(args: {
   budget: number;
 }): { ok: boolean; reason?: string } {
   const filled = args.slots.filter((x): x is number => x != null);
-  if (filled.length !== 11) return { ok: false, reason: `${filled.length}/11 jugadores` };
-  if (new Set(filled).size !== 11) return { ok: false, reason: "jugadores repetidos" };
+  if (filled.length !== 11) return { ok: false, reason: `${filled.length}/11 players` };
+  if (new Set(filled).size !== 11) return { ok: false, reason: "duplicate players" };
   const spent = lineupBudgetSpent(args.slots, args.costById);
-  if (spent > args.budget) return { ok: false, reason: `presupuesto excedido (${spent.toFixed(1)}/${args.budget}M)` };
-  if (args.captainId == null) return { ok: false, reason: "falta capitán" };
-  if (!filled.includes(args.captainId)) return { ok: false, reason: "capitán fuera del XI" };
+  if (spent > args.budget) return { ok: false, reason: `over budget (${spent.toFixed(1)}/${args.budget}M)` };
+  if (args.captainId == null) return { ok: false, reason: "pick a captain" };
+  if (!filled.includes(args.captainId)) return { ok: false, reason: "captain not in your XI" };
   return { ok: true };
 }
 

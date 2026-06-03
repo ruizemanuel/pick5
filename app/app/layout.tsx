@@ -49,25 +49,25 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://pick5-beta.vercel.app"),
   title: {
-    default: "Onze — Fantasy XI del Mundial on-chain",
+    default: "Onze — On-chain World Cup Fantasy XI",
     template: "%s · Onze",
   },
   description:
-    "Armá tu XI del Mundial 2026. Ganá la fase. No perdés nada. Built on Celo with an ERC-8004 verified AI Coach.",
+    "Build your World Cup 2026 XI. Win the phase. Lose nothing. Built on Celo with an ERC-8004 verified AI Coach.",
   applicationName: "Onze",
   openGraph: {
-    title: "Onze — Fantasy XI del Mundial on-chain",
+    title: "Onze — On-chain World Cup Fantasy XI",
     description:
-      "Armá tu XI del Mundial 2026. Ganá la fase. No perdés nada. Built on Celo with an ERC-8004 verified AI Coach.",
+      "Build your World Cup 2026 XI. Win the phase. Lose nothing. Built on Celo with an ERC-8004 verified AI Coach.",
     siteName: "Onze",
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Onze — Fantasy XI del Mundial on-chain",
+    title: "Onze — On-chain World Cup Fantasy XI",
     description:
-      "Armá tu XI del Mundial 2026. Ganá la fase. No perdés nada.",
+      "Build your World Cup 2026 XI. Win the phase. Lose nothing.",
   },
   other: {
     // Talent App project domain-ownership verification

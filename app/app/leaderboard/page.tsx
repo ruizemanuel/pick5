@@ -43,9 +43,9 @@ export default async function LeaderboardPage() {
         </header>
 
         <section className="pt-6">
-          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">Season · Tabla General</div>
-          <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">Tabla General</h1>
-          <p className="mt-2 text-sm text-white/50">Puntos agregados de todas las fases. El líder tras la última fase gana el pozo de la temporada.</p>
+          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#00DF7C]">Season · Standings</div>
+          <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">Overall Standings</h1>
+          <p className="mt-2 text-sm text-white/50">Aggregate points across every phase. The leader after the final phase wins the season pot.</p>
         </section>
 
         <div className="pt-6">
