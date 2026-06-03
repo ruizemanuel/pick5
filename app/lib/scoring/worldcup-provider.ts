@@ -18,7 +18,7 @@ export function fifaPlayersToProviderPlayers(
     return {
       id: p.id,
       name: p.knownName ?? `${p.firstName} ${p.lastName}`.trim(),
-      team: squad?.shortName ?? squad?.name ?? "",
+      team: squad?.abbr ?? squad?.name ?? "",
       position: p.position,
       cost: p.price,
       form: p.stats.form,

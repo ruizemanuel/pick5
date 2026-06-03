@@ -6,8 +6,8 @@ import {
 import type { FifaFantasyPlayer, FifaSquad } from "@/lib/worldcup/client";
 
 const squads: FifaSquad[] = [
-  { id: 1, name: "Argentina", shortName: "ARG" },
-  { id: 2, name: "France" }, // no shortName -> falls back to name
+  { id: 1, name: "Argentina", abbr: "ARG" },
+  { id: 2, name: "France" }, // no abbr -> falls back to name
 ];
 
 const players: FifaFantasyPlayer[] = [
@@ -33,7 +33,7 @@ describe("fifaPlayersToProviderPlayers", () => {
       chanceThisRound: null, chanceNextRound: null,
     });
   });
-  it("uses firstName+lastName when knownName is null, and squad name when shortName is missing", () => {
+  it("uses firstName+lastName when knownName is null, and squad name when abbr is missing", () => {
     const out = fifaPlayersToProviderPlayers(players, squads);
     expect(out[1].name).toBe("Kylian Mbappé");
     expect(out[1].team).toBe("France");

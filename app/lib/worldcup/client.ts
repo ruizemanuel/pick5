@@ -28,9 +28,9 @@ export type FifaFantasyPlayer = {
 };
 
 export type FifaSquad = {
-  id: number;
-  name: string;
-  shortName?: string; // 3-letter code if present
+  id: number;     // matches FifaFantasyPlayer.squadId (1..48, the World Cup field)
+  name: string;   // e.g. "Algeria"
+  abbr?: string;  // 3-letter code, e.g. "ALG"
 };
 
 export type FifaRound = {
@@ -56,8 +56,11 @@ export async function getFifaPlayers(): Promise<FifaFantasyPlayer[]> {
   return Array.isArray(data) ? data : data.players;
 }
 
+// NOTE: use `squads.json` (the 48-team field, ids 1..48 keyed to player.squadId),
+// NOT `squads_fifa.json` (FIFA-internal ids like 43817 that DON'T match squadId, so
+// the team lookup silently fell back to "").
 export async function getFifaSquads(): Promise<FifaSquad[]> {
-  const data = await getJson<FifaSquad[] | { squads: FifaSquad[] }>("squads_fifa.json", 86400);
+  const data = await getJson<FifaSquad[] | { squads: FifaSquad[] }>("squads.json", 86400);
   return Array.isArray(data) ? data : data.squads;
 }
 
