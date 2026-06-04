@@ -30,6 +30,7 @@ export function fifaPlayersToProviderPlayers(
       chanceThisRound: null,
       chanceNextRound: null,
       eliminated: squad?.isEliminated ?? false,
+      teamId: p.squadId,
     };
   });
 }

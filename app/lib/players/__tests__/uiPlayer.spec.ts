@@ -19,6 +19,11 @@ describe("providerPlayerToUi", () => {
     expect(ui.teamColor).toMatch(/^#[0-9A-Fa-f]{6}$/);
     expect(ui.photoUrl).toBe("");
     expect(ui.eliminated).toBe(false);
+    expect(ui.teamId).toBeUndefined();
+  });
+  it("maps teamId when the provider player has one", () => {
+    const ui = providerPlayerToUi({ ...base, teamId: 7 });
+    expect(ui.teamId).toBe(7);
   });
   it("passes eliminated: true when the provider player is eliminated", () => {
     const ui = providerPlayerToUi({ ...base, eliminated: true });

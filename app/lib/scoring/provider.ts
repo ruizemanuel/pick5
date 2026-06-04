@@ -16,6 +16,7 @@ export type ProviderPlayer = {
   chanceThisRound: number | null; // 0-100 probability of featuring this round; null = data unavailable (treat as fit)
   chanceNextRound: number | null; // same, for the next round
   eliminated?: boolean; // true if the player's team is out of the tournament (WC); FPL leaves it unset
+  teamId?: number; // squad id (WC: FIFA squadId 1..48) -> kit image; FPL leaves it unset
 };
 
 export interface ScoreProvider {

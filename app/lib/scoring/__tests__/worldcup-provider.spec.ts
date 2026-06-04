@@ -32,6 +32,7 @@ describe("fifaPlayersToProviderPlayers", () => {
       cost: 12.5, form: 5.0, owned: 40.2, totalPoints: 7, status: "playing",
       chanceThisRound: null, chanceNextRound: null,
       eliminated: true,
+      teamId: 1,
     });
   });
   it("uses firstName+lastName when knownName is null, and squad name when abbr is missing", () => {
@@ -39,6 +40,7 @@ describe("fifaPlayersToProviderPlayers", () => {
     expect(out[1].name).toBe("Kylian Mbappé");
     expect(out[1].team).toBe("France");
     expect(out[1].eliminated).toBe(false);
+    expect(out[1].teamId).toBe(2);
   });
 });
 
