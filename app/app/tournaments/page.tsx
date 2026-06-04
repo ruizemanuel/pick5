@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { createPublicClient, http } from "viem";
 import { chainForNetwork } from "@/lib/contracts/chain";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/design/AppShell";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { FechaCard } from "@/components/FechaCard";
 import { Wordmark } from "@/components/design/Wordmark";
@@ -66,9 +66,9 @@ async function load() {
 export default async function TournamentsPage() {
   const { season, rows, seedAmount, seasonFinalized } = await load();
   return (
-    <main className="min-h-dvh bg-[#08070D] text-white">
-      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
-        <header className="flex items-center justify-between">
+    <AppShell active="tournaments" topbarTitle={season.label}>
+      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24 lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0">
+        <header className="flex items-center justify-between lg:hidden">
           <Wordmark />
           <ConnectedWalletPill />
         </header>
@@ -90,15 +90,14 @@ export default async function TournamentsPage() {
         </div>
 
         <div className="pt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Phases</div>
-        <div className="mt-3 space-y-2.5">
+        <div className="mt-3 space-y-2.5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
           {rows.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/50">No phases yet · check back soon.</div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/50 lg:col-span-2">No phases yet · check back soon.</div>
           ) : (
             rows.map((r) => <FechaCard key={r.tournamentId} {...r} />)
           )}
         </div>
       </div>
-      <BottomNav />
-    </main>
+    </AppShell>
   );
 }
