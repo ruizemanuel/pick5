@@ -5,7 +5,8 @@ import type { Route } from "next";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/design/AppShell";
+import { PhaseSwitcher } from "@/components/design/PhaseSwitcher";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { Pitch, type PitchSlot } from "@/components/design/Pitch";
 import { PlayerRow } from "@/components/design/PlayerRow";
@@ -18,6 +19,7 @@ import { fechaLabel, fechaRound, getActiveSeason, seasonProvider } from "@/lib/t
 import type { UiPlayer } from "@/lib/players/uiPlayer";
 import { Wordmark } from "@/components/design/Wordmark";
 import { formationLayout, inferFormation } from "@/lib/lineup/formations";
+import { kitUrl } from "@/lib/players/kit";
 
 type LiveStats = {
   mw: number;
@@ -161,6 +163,7 @@ export default function MyTeamPage() {
         name: p.name,
         team: p.team,
         position: p.position,
+        kitUrl: kitUrl(p.teamId),
       };
     });
   }, [lineup, ids, playerMap]);
@@ -201,18 +204,20 @@ export default function MyTeamPage() {
   const showRank = me?.rank != null;
   const rankLabel = showRank ? `#${me!.rank}` : "—";
 
+  const topbarTitle = <>{getActiveSeason().label} · {fechaLabel(tid)}</>;
+  const topbarRight = <PhaseSwitcher currentTid={tid} hrefFor={(t) => `/play/${t}`} />;
+
   if (!isConnected) {
     return (
-      <main className="min-h-dvh bg-[#08070D] text-white">
-        <div className="mx-auto flex min-h-dvh max-w-[440px] flex-col items-center justify-center gap-4 px-5 pb-24">
-          <Wordmark />
+      <AppShell active="home" topbarTitle={topbarTitle} topbarRight={topbarRight}>
+        <div className="mx-auto flex min-h-dvh max-w-[440px] flex-col items-center justify-center gap-4 px-5 pb-24 lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0">
+          <Wordmark className="lg:hidden" />
           <p className="text-center text-white/70">
             Connect your wallet to see your lineup.
           </p>
           <ConnectedWalletPill />
         </div>
-        <BottomNav />
-      </main>
+      </AppShell>
     );
   }
 
@@ -221,9 +226,9 @@ export default function MyTeamPage() {
   // active fecha's data on a different fecha's page. Resolved-but-empty = no pool yet.
   if (!poolAddr) {
     return (
-      <main className="min-h-dvh bg-[#08070D] text-white">
-        <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
-          <header className="flex items-center justify-between">
+      <AppShell active="home" topbarTitle={topbarTitle} topbarRight={topbarRight}>
+        <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24 lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0">
+          <header className="flex items-center justify-between lg:hidden">
             <Wordmark />
             <ConnectedWalletPill />
           </header>
@@ -249,15 +254,14 @@ export default function MyTeamPage() {
             </div>
           </section>
         </div>
-        <BottomNav />
-      </main>
+      </AppShell>
     );
   }
 
   return (
-    <main className="min-h-dvh bg-[#08070D] text-white">
-      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
-        <header className="flex items-center justify-between">
+    <AppShell active="home" topbarTitle={topbarTitle} topbarRight={topbarRight}>
+      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24 lg:max-w-none lg:px-0 lg:pt-0 lg:pb-0">
+        <header className="flex items-center justify-between lg:hidden">
           <Wordmark />
           <ConnectedWalletPill />
         </header>
@@ -357,96 +361,100 @@ export default function MyTeamPage() {
               </section>
             )}
 
-            <section className="pt-5">
-              <Pitch slots={pitchSlots} positions={layout} captainIndex={captainIndex} />
-            </section>
+            <div className="lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-8 lg:items-start">
+              <section className="pt-5 lg:max-w-[440px]">
+                <Pitch slots={pitchSlots} positions={layout} captainIndex={captainIndex} />
+              </section>
 
-            <section className="pt-5">
-              <div className="grid grid-cols-3 gap-2">
-                <Stat
-                  label="Score"
-                  value={String(totalScore)}
-                  sub={
-                    finalized
-                      ? "Phase final"
-                      : !isLocked
-                        ? "yet to play"
-                        : cachedTotal > 0
-                          ? "Phase total"
-                          : "This phase live"
-                  }
-                />
-                <Stat
-                  label="Rank"
-                  value={rankLabel}
-                  sub={showRank ? "this phase" : "after first points"}
-                />
-                <Stat
-                  label={statusLabel}
-                  value={statusValue}
-                  sub={statusSub}
-                />
-              </div>
-            </section>
-
-            <section className="pt-6">
-              <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/50">
-                How your players are doing
-              </div>
-              <div className="mt-2 space-y-2">
-                {ids.map((id, i) => {
-                  const p = playerMap.get(id);
-                  const pts = live?.stats?.[id]?.points ?? 0;
-                  const mins = live?.stats?.[id]?.minutes ?? 0;
-                  const goals = live?.stats?.[id]?.goals ?? 0;
-                  const assists = live?.stats?.[id]?.assists ?? 0;
-                  const subline = finalized
-                    ? mins === 0
-                      ? "Did not play"
-                      : `${mins}'  ·  ${goals}G ${assists}A`
-                    : !isLocked
-                      ? "Yet to start"
-                      : mins === 0
-                        ? "Yet to play"
-                        : `${mins}'  ·  ${goals}G ${assists}A`;
-                  return (
-                    <PlayerRow
-                      key={`${id}-${i}`}
-                      photoUrl={p?.photoUrl}
-                      initials={p?.initials ?? `#${id}`}
-                      teamColor={p?.teamColor}
-                      name={p?.name ?? `Player #${id}`}
-                      team={p?.team}
-                      position={p?.position}
-                      meta={subline}
-                      right={
-                        <>
-                          <div className="font-display text-base text-white tabular-nums">
-                            {pts}
-                          </div>
-                          <div className="text-[9px] uppercase tracking-wider text-white/40">
-                            pts
-                          </div>
-                        </>
+              <div className="min-w-0">
+                <section className="pt-5">
+                  <div className="grid grid-cols-3 gap-2">
+                    <Stat
+                      label="Score"
+                      value={String(totalScore)}
+                      sub={
+                        finalized
+                          ? "Phase final"
+                          : !isLocked
+                            ? "yet to play"
+                            : cachedTotal > 0
+                              ? "Phase total"
+                              : "This phase live"
                       }
                     />
-                  );
-                })}
-              </div>
-            </section>
+                    <Stat
+                      label="Rank"
+                      value={rankLabel}
+                      sub={showRank ? "this phase" : "after first points"}
+                    />
+                    <Stat
+                      label={statusLabel}
+                      value={statusValue}
+                      sub={statusSub}
+                    />
+                  </div>
+                </section>
 
-            <section className="pt-6">
-              <Link
-                href={"/leaderboard" as Route}
-                className="block rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70 transition hover:bg-white/10"
-              >
-                See full leaderboard →
-              </Link>
-            </section>
+                <section className="pt-6">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/50">
+                    How your players are doing
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {ids.map((id, i) => {
+                      const p = playerMap.get(id);
+                      const pts = live?.stats?.[id]?.points ?? 0;
+                      const mins = live?.stats?.[id]?.minutes ?? 0;
+                      const goals = live?.stats?.[id]?.goals ?? 0;
+                      const assists = live?.stats?.[id]?.assists ?? 0;
+                      const subline = finalized
+                        ? mins === 0
+                          ? "Did not play"
+                          : `${mins}'  ·  ${goals}G ${assists}A`
+                        : !isLocked
+                          ? "Yet to start"
+                          : mins === 0
+                            ? "Yet to play"
+                            : `${mins}'  ·  ${goals}G ${assists}A`;
+                      return (
+                        <PlayerRow
+                          key={`${id}-${i}`}
+                          photoUrl={p?.photoUrl}
+                          initials={p?.initials ?? `#${id}`}
+                          teamColor={p?.teamColor}
+                          kitUrl={kitUrl(p?.teamId)}
+                          name={p?.name ?? `Player #${id}`}
+                          team={p?.team}
+                          position={p?.position}
+                          meta={subline}
+                          right={
+                            <>
+                              <div className="font-display text-base text-white tabular-nums">
+                                {pts}
+                              </div>
+                              <div className="text-[9px] uppercase tracking-wider text-white/40">
+                                pts
+                              </div>
+                            </>
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </section>
+
+                <section className="pt-6">
+                  <Link
+                    href={"/leaderboard" as Route}
+                    className="block rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/70 transition hover:bg-white/10"
+                  >
+                    See full leaderboard →
+                  </Link>
+                </section>
+              </div>
+            </div>
           </>
         )}
       </div>
-      <BottomNav />
-    </main>
+    </AppShell>
   );
 }
