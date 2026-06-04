@@ -56,6 +56,8 @@ export default function BuildPage() {
     return m;
   }, [players]);
 
+  const pickablePlayers = useMemo(() => players.filter((p) => !p.eliminated), [players]);
+
   const budget = fechaBudget(tid);
   const positions = formationLayout(draft.formation);
   const slotPositions = formationSlots(draft.formation);
@@ -279,7 +281,7 @@ export default function BuildPage() {
         onOpenChange={(o) => {
           if (!o) setPickerSlot(null);
         }}
-        players={players}
+        players={pickablePlayers}
         position={pickerSlot !== null ? slotPositions[pickerSlot] : undefined}
         excludeIds={pickerExclude}
         budgetRemaining={
