@@ -1,20 +1,19 @@
 import { Suspense } from "react";
 import { Leaderboard } from "@/components/Leaderboard";
-import { BottomNav } from "@/components/BottomNav";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { ResultsHero } from "@/components/ResultsHero";
+import { AppShell } from "@/components/design/AppShell";
+import { Wordmark } from "@/components/design/Wordmark";
 
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
 
 export default function ResultsPage() {
   return (
-    <main className="min-h-dvh bg-[#08070D] text-white">
-      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24">
-        <header className="flex items-center justify-between">
-          <span className="font-display text-2xl tracking-[0.2em] text-white">
-            PICK<span className="text-[#00DF7C]">5</span>
-          </span>
+    <AppShell active="ranking">
+      <div className="mx-auto flex max-w-[440px] flex-col px-5 pt-5 pb-24 lg:max-w-3xl lg:px-0 lg:pt-0 lg:pb-0">
+        <header className="flex items-center justify-between lg:hidden">
+          <Wordmark />
           <ConnectedWalletPill />
         </header>
 
@@ -48,7 +47,6 @@ export default function ResultsPage() {
           </div>
         </div>
       </div>
-      <BottomNav />
-    </main>
+    </AppShell>
   );
 }
