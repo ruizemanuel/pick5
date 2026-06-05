@@ -57,7 +57,9 @@ const PREVIEW_LINEUP: PitchSlot[] = [
   { initials: "LO", name: "Osimhen", team: "NGA", position: "FWD", teamColor: "#008751" },
 ];
 
-const LOCK_DATE = new Date("2026-05-16T14:00:00Z");
+// Interim: World Cup 2026 kickoff (group-stage lock). Replace with the real
+// on-chain lockTime at deploy (Tanda 5) — exact kickoff hour TBD.
+const LOCK_DATE = new Date("2026-06-11T14:00:00Z");
 
 function timeUntil(target: Date): string {
   const ms = Math.max(0, target.getTime() - Date.now());
@@ -120,7 +122,7 @@ export default async function LandingPage() {
             <Stat
               label="Locks in"
               value={locksIn}
-              sub="Sat · 16 May · 14:00 UTC"
+              sub="Thu · Jun 11 · 14:00 UTC"
             />
           </div>
         </section>
