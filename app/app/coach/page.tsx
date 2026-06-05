@@ -86,7 +86,7 @@ export default async function CoachPage() {
             <span>Verified agent</span>
           </div>
           <h1 className="font-display mt-1 text-4xl leading-none tracking-tight">
-            Onze DT
+            Onze Coach
           </h1>
           <p className="mt-2 text-sm text-white/50">
             Picks are committed onchain before each matchweek and revealed
