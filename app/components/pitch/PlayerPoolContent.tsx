@@ -37,7 +37,10 @@ export function PlayerPoolContent({
       .filter((p) =>
         position != null ? p.position === position : !pos || p.position === pos,
       )
-      .sort((a, b) => b.form - a.form)
+      // Most expensive first (standard fantasy UX); points break ties. The WC
+      // provider leaves `form` at 0, so the old form-sort left the list in the
+      // feed's team order — sort by price instead.
+      .sort((a, b) => b.cost - a.cost || b.points - a.points)
       .slice(0, 100);
   }, [players, q, pos, position, excludeIds]);
 
