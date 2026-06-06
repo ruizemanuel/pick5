@@ -70,6 +70,7 @@ export default function ConfirmPage() {
   const [busy, setBusy] = useState(false);
   const [didJoin, setDidJoin] = useState(false);
   const [players, setPlayers] = useState<UiPlayer[]>([]);
+  const [playersLoaded, setPlayersLoaded] = useState(false);
 
   useEffect(() => {
     // Once the join tx confirms we navigate to /play/[tid] and clear the draft
@@ -87,7 +88,8 @@ export default function ConfirmPage() {
     fetch("/api/players")
       .then((r) => r.json())
       .then((d: { players: UiPlayer[] }) => setPlayers(d.players))
-      .catch(() => setPlayers([]));
+      .catch(() => setPlayers([]))
+      .finally(() => setPlayersLoaded(true));
   }, []);
 
   const playerMap = useMemo(() => {
@@ -179,23 +181,37 @@ export default function ConfirmPage() {
 
         <div className="lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-8 lg:items-start">
           <section className="pt-5 space-y-2">
-            {completed.map((id, i) => {
-              const p = playerMap.get(id);
-              const isCaptain = id === draft.captainId;
-              return (
-                <PlayerRow
-                  key={`${id}-${i}`}
-                  photoUrl={p?.photoUrl}
-                  initials={p?.initials ?? `#${id}`}
-                  teamColor={p?.teamColor}
-                  name={p?.name ?? `Player #${id}`}
-                  team={p?.team}
-                  position={p?.position}
-                  kitUrl={kitUrl(p?.teamId)}
-                  right={isCaptain ? <span className="text-[#F5C842] font-bold text-sm">C</span> : undefined}
-                />
-              );
-            })}
+            {!playersLoaded
+              ? // Skeletons while /api/players loads, so player IDs never flash as names.
+                completed.map((id, i) => (
+                  <div
+                    key={`sk-${id}-${i}`}
+                    className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5"
+                  >
+                    <div className="size-12 shrink-0 animate-pulse rounded-full bg-white/10" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                      <div className="h-2 w-16 animate-pulse rounded bg-white/5" />
+                    </div>
+                  </div>
+                ))
+              : completed.map((id, i) => {
+                  const p = playerMap.get(id);
+                  const isCaptain = id === draft.captainId;
+                  return (
+                    <PlayerRow
+                      key={`${id}-${i}`}
+                      photoUrl={p?.photoUrl}
+                      initials={p?.initials ?? `#${id}`}
+                      teamColor={p?.teamColor}
+                      name={p?.name ?? `Player #${id}`}
+                      team={p?.team}
+                      position={p?.position}
+                      kitUrl={kitUrl(p?.teamId)}
+                      right={isCaptain ? <span className="text-[#F5C842] font-bold text-sm">C</span> : undefined}
+                    />
+                  );
+                })}
           </section>
 
           <div className="min-w-0">
