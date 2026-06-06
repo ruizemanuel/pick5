@@ -8,8 +8,8 @@ name: Onze Cron Jobs
 # idempotent (submit + finalize, re-runnable), and `gh workflow run cron.yml` fires
 # /api/leaderboard/recompute within ~1-2 min for urgent manual refreshes.
 #
-# NOTE: BASE_URL below is the live prod alias. If the Vercel project is renamed to
-# `onze` / `onze.vercel.app` becomes prod, update BASE_URL (one place) accordingly.
+# NOTE: BASE_URL below is the live prod alias (onze-beta.vercel.app). If the prod
+# domain changes, update BASE_URL here (one place).
 
 on:
   schedule:
@@ -34,7 +34,7 @@ permissions:
   contents: read
 
 env:
-  BASE_URL: "https://pick5-beta.vercel.app"
+  BASE_URL: "https://onze-beta.vercel.app"
 
 jobs:
   fire:
