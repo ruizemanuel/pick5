@@ -13,7 +13,12 @@ export function fifaPlayersToProviderPlayers(
   squads: FifaSquad[],
 ): ProviderPlayer[] {
   const squadById = new Map(squads.map((s) => [s.id, s]));
-  return players.map((p) => {
+  return players
+    // Drop players not in a World Cup squad — FIFA marks them status "transferred"
+    // (they were never called up, so they can never score or be picked). Distinct
+    // from `eliminated`, where the player WAS in a squad whose team got knocked out.
+    .filter((p) => p.status !== "transferred")
+    .map((p) => {
     const squad = squadById.get(p.squadId);
     return {
       id: p.id,

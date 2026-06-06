@@ -42,6 +42,19 @@ describe("fifaPlayersToProviderPlayers", () => {
     expect(out[1].eliminated).toBe(false);
     expect(out[1].teamId).toBe(2);
   });
+  it("drops players not called up (status 'transferred')", () => {
+    const withTransferred: FifaFantasyPlayer[] = [
+      ...players,
+      {
+        id: 99, firstName: "Franco", lastName: "Mastantuono", knownName: null,
+        squadId: 2, position: "MID", price: 5.8, status: "transferred", percentSelected: 0.1,
+        stats: { totalPoints: 0, avgPoints: 0, form: 0, lastRoundPoints: 0, roundPoints: [] },
+      },
+    ];
+    const out = fifaPlayersToProviderPlayers(withTransferred, squads);
+    expect(out).toHaveLength(2);
+    expect(out.find((p) => p.id === 99)).toBeUndefined();
+  });
 });
 
 describe("fifaRoundPointsToMap", () => {
