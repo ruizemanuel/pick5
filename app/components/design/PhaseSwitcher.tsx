@@ -14,11 +14,14 @@ export function PhaseSwitcher({ currentTid, hrefFor }: { currentTid?: number; hr
       aria-label="Switch phase"
       value={currentTid ?? ""}
       onChange={(e) => router.push(hrefFor(Number(e.target.value)) as Route)}
-      className="rounded-full border border-white/14 bg-white/5 px-3 py-1 text-sm text-white/80"
+      // color-scheme:dark makes the browser render the native option popup dark
+      // (instead of the default white) so it matches the app theme.
+      style={{ colorScheme: "dark" }}
+      className="cursor-pointer rounded-full border border-white/14 bg-white/5 px-3 py-1 text-sm text-white/80"
     >
       <option value="" hidden disabled>Phase…</option>
       {fechas.map((f) => (
-        <option key={f.tournamentId} value={f.tournamentId} className="bg-[#0F0E14]">
+        <option key={f.tournamentId} value={f.tournamentId} className="bg-[#0F0E14] text-white">
           {fechaLabel(f.tournamentId)}
         </option>
       ))}
