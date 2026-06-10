@@ -38,23 +38,25 @@ async function readPoolStats() {
   }
 }
 
-// 11-slot 4-3-3 preview (GK + 4 DEF + 3 MID + 3 FWD) — placeholder data only
+// 11-slot 4-3-3 preview (GK + 4 DEF + 3 MID + 3 FWD) — a "world XI" using the real
+// FIFA national-team kits (squadId 1..48 -> /kits/{id}.png), to match the rest of
+// the app. Decorative only; no player names.
 const PREVIEW_LINEUP: PitchSlot[] = [
   // GK
-  { initials: "OR", name: "Rui", team: "ARG", position: "GK", teamColor: "#74ACDF" },
+  { kitUrl: "/kits/41.png", team: "ESP", position: "GK", teamColor: "#C60B1E" },
   // DEF
-  { initials: "AT", name: "Tagliafico", team: "ARG", position: "DEF", teamColor: "#74ACDF" },
-  { initials: "ML", name: "Lisandro", team: "ARG", position: "DEF", teamColor: "#74ACDF" },
-  { initials: "CB", name: "Bastoni", team: "ITA", position: "DEF", teamColor: "#009246" },
-  { initials: "TR", name: "Renan", team: "BRA", position: "DEF", teamColor: "#009C3B" },
+  { kitUrl: "/kits/30.png", team: "NED", position: "DEF", teamColor: "#FF6200" },
+  { kitUrl: "/kits/7.png", team: "BRA", position: "DEF", teamColor: "#FFDF00" },
+  { kitUrl: "/kits/2.png", team: "ARG", position: "DEF", teamColor: "#74ACDF" },
+  { kitUrl: "/kits/13.png", team: "CRO", position: "DEF", teamColor: "#E7ECEF" },
   // MID
-  { initials: "LM", name: "Messi", team: "ARG", position: "MID", teamColor: "#74ACDF" },
-  { initials: "JB", name: "Bellingham", team: "ENG", position: "MID", teamColor: "#003090" },
-  { initials: "VV", name: "Vini Jr", team: "BRA", position: "MID", teamColor: "#009C3B" },
+  { kitUrl: "/kits/18.png", team: "ENG", position: "MID", teamColor: "#CF081F" },
+  { kitUrl: "/kits/20.png", team: "GER", position: "MID", teamColor: "#FFCE00" },
+  { kitUrl: "/kits/5.png", team: "BEL", position: "MID", teamColor: "#FDDA24" },
   // FWD
-  { initials: "KM", name: "Mbappé", team: "FRA", position: "FWD", teamColor: "#002395" },
-  { initials: "EH", name: "Haaland", team: "NOR", position: "FWD", teamColor: "#EF2B2D" },
-  { initials: "LO", name: "Osimhen", team: "NGA", position: "FWD", teamColor: "#008751" },
+  { kitUrl: "/kits/19.png", team: "FRA", position: "FWD", teamColor: "#002395" },
+  { kitUrl: "/kits/35.png", team: "POR", position: "FWD", teamColor: "#DA291C" },
+  { kitUrl: "/kits/46.png", team: "URU", position: "FWD", teamColor: "#5CBFEB" },
 ];
 
 // Interim: World Cup 2026 kickoff (group-stage lock). Replace with the real
