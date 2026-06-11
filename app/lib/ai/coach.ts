@@ -92,7 +92,9 @@ async function picksViaOpenRouter(prompt: string): Promise<CoachPicks> {
       },
       messages: [{ role: "user", content: prompt }],
     }),
-    signal: AbortSignal.timeout(45000),
+    // Tight timeout: the whole route runs in a 60s function. OpenRouter's free
+    // tier can hang, so fail fast and let the gateway fallback finish in budget.
+    signal: AbortSignal.timeout(14000),
   });
   if (!res.ok) {
     throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 160)}`);
