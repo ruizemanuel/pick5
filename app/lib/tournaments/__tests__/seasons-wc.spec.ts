@@ -6,6 +6,7 @@ import {
   fechaBudget,
   fechaLabel,
   priorPhaseTid,
+  phaseRoundsForRound,
 } from "../seasons";
 
 describe("WC season config", () => {
@@ -31,5 +32,9 @@ describe("WC season config", () => {
     const s = getActiveSeason();
     expect(priorPhaseTid(s, 1)).toBe(0);
     expect(priorPhaseTid(s, 0)).toBeUndefined();
+  });
+  it("phaseRoundsForRound: coach mw resolves to the whole phase's rounds", () => {
+    expect(phaseRoundsForRound(1)).toEqual([1, 2, 3]); // group primary round -> all 3
+    expect(phaseRoundsForRound(4)).toEqual([4, 5, 6, 7, 8]); // knockout
   });
 });

@@ -91,6 +91,17 @@ export function phaseRounds(season: Season, tournamentId: number): number[] {
   return f.rounds ?? [f.round];
 }
 
+/** The provider rounds aggregated by the phase whose PRIMARY round is `mw`
+ * (group mw=1 -> [1,2,3], knockout mw=4 -> [4,5,6,7,8]). The coach keys on the
+ * primary round, so its accuracy must be scored over the WHOLE phase, not just `mw`. */
+export function phaseRoundsForRound(round: number): number[] {
+  for (const s of SEASONS) {
+    const f = s.fechas.find((x) => x.round === round);
+    if (f) return f.rounds ?? [f.round];
+  }
+  return [round];
+}
+
 /** A season's ScoreProvider id (defaults to "fpl"). */
 export function seasonProvider(season: Season): string {
   return season.provider ?? "fpl";

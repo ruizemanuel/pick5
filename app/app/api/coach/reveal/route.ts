@@ -8,7 +8,8 @@ import { coachPicks } from "@/lib/db/schema";
 import { getActiveProvider } from "@/lib/scoring/providers";
 import { onzeCoachAgentAbi } from "@/lib/contracts/abi";
 import { coachAddress, DEFAULT_NETWORK } from "@/lib/contracts/addresses";
-import { isConfiguredRound } from "@/lib/tournaments/seasons";
+import { isConfiguredRound, phaseRoundsForRound } from "@/lib/tournaments/seasons";
+import { getPhasePoints } from "@/lib/scoring/phase-points";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,8 +29,14 @@ export async function GET(req: NextRequest) {
   const db = getDb();
   const provider = getActiveProvider();
 
-  const settled = await provider.isRoundSettled(mw).catch(() => false);
-  if (!settled) return NextResponse.json({ ok: false, reason: "not settled" });
+  // Accuracy is scored over the WHOLE phase (group = rounds 1,2,3), so reveal only
+  // once EVERY round of the phase is settled — not just the primary round `mw`.
+  const rounds = phaseRoundsForRound(mw);
+  const settledFlags = await Promise.all(
+    rounds.map((r) => provider.isRoundSettled(r).catch(() => false)),
+  );
+  if (!settledFlags.every(Boolean))
+    return NextResponse.json({ ok: false, reason: "phase not fully settled" });
 
   const rows = await db.select().from(coachPicks).where(eq(coachPicks.mw, mw));
   if (rows.length === 0) {
@@ -40,10 +47,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, reason: "already revealed", txHash: row.revealTxHash });
   }
 
-  // Fetch actual MW points via the provider (playerId -> points).
-  const pointsByPlayer = await provider.getRoundPoints(mw);
+  // Phase-aggregated points (group = sum of rounds 1,2,3) per playerId.
+  const pointsByPlayer = await getPhasePoints(provider, rounds);
 
-  // Compute accuracy: coachPickPoints / sum(top-11 actual points league-wide)
+  // Compute accuracy: coachPickPoints / sum(top-11 actual points league-wide),
+  // both over the full phase — i.e. coach's XI vs the best-possible 11 of the phase.
   const coachPickPoints = row.playerIds.reduce(
     (sum: number, pid: number) => sum + (pointsByPlayer.get(pid) ?? 0),
     0

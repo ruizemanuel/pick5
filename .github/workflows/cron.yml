@@ -15,12 +15,13 @@ on:
   schedule:
     # Coach commits the group XI before lock (hidden until reveal)
     - cron: "0 12 11 6 *"   # publish-picks mw=1 — Jun 11 12:00 UTC (pre-lock)
-    # Coach reveals after round 1 settles (computes accuracy). Two attempts.
-    - cron: "0 12 14 6 *"   # reveal mw=1 — Jun 14 12:00 UTC
-    - cron: "0 20 14 6 *"   # reveal mw=1 retry — Jun 14 20:00 UTC
     # Oracle finalizes the group pool after all 3 rounds settle + endTime (Jun 28 06:00)
     - cron: "0 12 28 6 *"   # finalize-mw t=0 — Jun 28 12:00 UTC (submit + finalize)
     - cron: "0 12 29 6 *"   # finalize-mw t=0 retry — Jun 29 12:00 UTC
+    # Coach reveals AFTER the whole group phase (rounds 1-3) settles — accuracy is
+    # scored over the full phase, not a single round. Two attempts.
+    - cron: "0 14 28 6 *"   # reveal mw=1 — Jun 28 14:00 UTC
+    - cron: "0 14 29 6 *"   # reveal mw=1 retry — Jun 29 14:00 UTC
     # Daily leaderboard recompute (all active-season fechas)
     - cron: "0 0 * * *"
   workflow_dispatch:
@@ -47,8 +48,8 @@ jobs:
           if [ -z "$URL" ]; then
             case "${{ github.event.schedule }}" in
               "0 12 11 6 *") URL="/api/coach/publish-picks?mw=1" ;;
-              "0 12 14 6 *") URL="/api/coach/reveal?mw=1" ;;
-              "0 20 14 6 *") URL="/api/coach/reveal?mw=1" ;;
+              "0 14 28 6 *") URL="/api/coach/reveal?mw=1" ;;
+              "0 14 29 6 *") URL="/api/coach/reveal?mw=1" ;;
               "0 12 28 6 *") URL="/api/oracle/finalize-mw?t=0" ;;
               "0 12 29 6 *") URL="/api/oracle/retry?t=0" ;;
               "0 0 * * *")   URL="/api/leaderboard/recompute" ;;
