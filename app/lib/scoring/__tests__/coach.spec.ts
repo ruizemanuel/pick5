@@ -49,6 +49,14 @@ describe("rankCandidates", () => {
     expect(rankCandidates(pool).map((p) => p.id)).toEqual([2, 3, 1]);
   });
 
+  it("drops players whose team is eliminated (knockout), even top-ranked", () => {
+    const pool = [
+      player({ id: 1, eliminated: true, form: 9, owned: 90, cost: 4 }), // best score but OUT
+      player({ id: 2, form: 1, owned: 10, cost: 6 }),
+    ];
+    expect(rankCandidates(pool).map((p) => p.id)).toEqual([2]);
+  });
+
   it("caps the candidate pool at 50", () => {
     const pool = Array.from({ length: 80 }, (_, i) =>
       player({ id: i + 1, form: i + 1 }),

@@ -49,6 +49,9 @@ export function rankCandidates(players: ProviderPlayer[]): ProviderPlayer[] {
   const score = (p: ProviderPlayer) =>
     ((p.form + 1) * p.owned) / Math.max(p.cost, 0.1);
   return filterAvailable(players)
+    // Knockout: never pick a player whose team has been eliminated (no-op during
+    // the group stage, when no team is out yet). Mirrors the builder's picker.
+    .filter((p) => !p.eliminated)
     .sort((a, b) => score(b) - score(a))
     .slice(0, 50);
 }
