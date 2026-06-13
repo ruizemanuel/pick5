@@ -34,12 +34,38 @@ export type FifaSquad = {
   isEliminated?: boolean; // squads.json flag — true once the squad is knocked out
 };
 
+export type FifaMatch = {
+  id: number;
+  status: string; // "scheduled" | "complete" | (in-play string, e.g. "playing")
+  period: string; // "pre_match" | "full_time" | (in-play)
+  minutes: number;
+  extraMinutes: number;
+  date: string; // ISO w/ offset, e.g. "2026-06-11T20:00:00+01:00"
+  venueName?: string;
+  venueCity?: string;
+  venueId?: number;
+  isSuspended?: boolean;
+  homeSquadId: number; // 1..48 -> kits/{id}.png
+  awaySquadId: number;
+  homeSquadName: string;
+  awaySquadName: string;
+  homeSquadAbbr: string;
+  awaySquadAbbr: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  homePenaltyScore: number | null;
+  awayPenaltyScore: number | null;
+  homeGoalScorersAssists: { playerId: number; assistId: number | null }[] | null;
+  awayGoalScorersAssists: { playerId: number; assistId: number | null }[] | null;
+};
+
 export type FifaRound = {
   id: number;
-  status: string; // "scheduled" | "open" | "closed" | ...
+  status: string; // "scheduled" | "open" | "closed" | "playing" | ...
   startDate?: string;
   endDate?: string;
   stage?: string;
+  tournaments?: FifaMatch[]; // FIFA's name for the round's matches; absent/empty before a round is seeded
 };
 
 async function getJson<T>(path: string, revalidate: number): Promise<T> {
@@ -65,7 +91,7 @@ export async function getFifaSquads(): Promise<FifaSquad[]> {
   return Array.isArray(data) ? data : data.squads;
 }
 
-export async function getFifaRounds(): Promise<FifaRound[]> {
-  const data = await getJson<FifaRound[] | { rounds: FifaRound[] }>("rounds.json", 600);
+export async function getFifaRounds(revalidate = 600): Promise<FifaRound[]> {
+  const data = await getJson<FifaRound[] | { rounds: FifaRound[] }>("rounds.json", revalidate);
   return Array.isArray(data) ? data : data.rounds;
 }
