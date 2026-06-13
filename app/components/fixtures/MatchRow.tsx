@@ -1,6 +1,14 @@
+"use client";
 import Image from "next/image";
+import { useState } from "react";
+import { IconChevronDown } from "@tabler/icons-react";
 import type { Match, Side } from "@/lib/fixtures/fixtures";
+import type { UiPlayer } from "@/lib/players/uiPlayer";
+import { type Xi, tieInForMatch } from "@/lib/fixtures/tie-in";
 import { kitUrl } from "@/lib/players/kit";
+import { MatchDetail } from "./MatchDetail";
+
+const EMPTY_PLAYERS = new Map<number, UiPlayer>();
 
 function Kit({ side }: { side: Side }) {
   const url = kitUrl(side.squadId);
@@ -25,17 +33,28 @@ function hasPens(m: Match): boolean {
   return m.home.penalties != null && m.away.penalties != null && (m.home.penalties > 0 || m.away.penalties > 0);
 }
 
-export function MatchRow({ match: m }: { match: Match }) {
+export function MatchRow({
+  match: m,
+  playersById = EMPTY_PLAYERS,
+  myXi = null,
+}: {
+  match: Match;
+  playersById?: Map<number, UiPlayer>;
+  myXi?: Xi | null;
+}) {
+  const [open, setOpen] = useState(false);
   const played = m.status === "finished" || m.status === "live";
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5">
-      {/* home */}
+  const tie = tieInForMatch(m, myXi, playersById);
+  const expandable = m.goals.length > 0 || tie.involved;
+  const hasCaptain = tie.players.some((p) => p.isCaptain);
+
+  const inner = (
+    <>
       <div className="flex flex-1 items-center justify-end gap-2 text-right">
         <span className="text-sm font-medium text-white/85">{m.home.abbr}</span>
         <Kit side={m.home} />
       </div>
 
-      {/* center */}
       <div className="flex w-20 flex-col items-center">
         {played ? (
           <div className="flex items-center gap-1 text-base font-semibold tabular-nums">
@@ -57,13 +76,44 @@ export function MatchRow({ match: m }: { match: Match }) {
         {hasPens(m) && (
           <span className="mt-0.5 text-[10px] text-white/50">{m.home.penalties}–{m.away.penalties} pens</span>
         )}
+        {tie.involved && (
+          <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-full bg-[#F5C842]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#F5C842]">
+            ●{tie.players.length}{hasCaptain ? " C" : ""}
+          </span>
+        )}
       </div>
 
-      {/* away */}
       <div className="flex flex-1 items-center gap-2">
         <Kit side={m.away} />
         <span className="text-sm font-medium text-white/85">{m.away.abbr}</span>
       </div>
+    </>
+  );
+
+  if (!expandable) {
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5">
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/[0.02]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-white/[0.03]"
+      >
+        {inner}
+        <IconChevronDown
+          size={16}
+          className={"shrink-0 text-white/30 transition " + (open ? "rotate-180" : "")}
+          aria-hidden
+        />
+      </button>
+      {open && <MatchDetail match={m} playersById={playersById} myXi={myXi} />}
     </div>
   );
 }
