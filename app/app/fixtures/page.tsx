@@ -4,10 +4,14 @@ import { Wordmark } from "@/components/design/Wordmark";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 import { RoundSection } from "@/components/fixtures/RoundSection";
 import { useFixtures } from "@/hooks/useFixtures";
+import { usePlayers } from "@/hooks/usePlayers";
+import { useFixtureLineups } from "@/hooks/useFixtureLineups";
 import { currentRoundIndex } from "@/lib/fixtures/fixtures";
 
 export default function FixturesPage() {
   const { rounds, isLoading } = useFixtures();
+  const { byId } = usePlayers();
+  const { lineupForRound } = useFixtureLineups();
   const current = currentRoundIndex(rounds);
 
   return (
@@ -30,7 +34,13 @@ export default function FixturesPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {rounds.map((r, i) => (
-              <RoundSection key={r.round} round={r} defaultOpen={i === current} />
+              <RoundSection
+                key={r.round}
+                round={r}
+                defaultOpen={i === current}
+                playersById={byId}
+                lineupForRound={lineupForRound}
+              />
             ))}
           </div>
         )}

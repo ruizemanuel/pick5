@@ -3,12 +3,27 @@ import { useState } from "react";
 import { IconChevronDown } from "@tabler/icons-react";
 import type { RoundFixtures } from "@/lib/fixtures/fixtures";
 import { groupMatchesByDay, shortDate } from "@/lib/fixtures/fixtures";
+import type { Xi } from "@/lib/fixtures/tie-in";
+import type { UiPlayer } from "@/lib/players/uiPlayer";
 import { MatchRow } from "./MatchRow";
 
-export function RoundSection({ round, defaultOpen }: { round: RoundFixtures; defaultOpen: boolean }) {
+const EMPTY_PLAYERS = new Map<number, UiPlayer>();
+
+export function RoundSection({
+  round,
+  defaultOpen,
+  playersById = EMPTY_PLAYERS,
+  lineupForRound = () => null,
+}: {
+  round: RoundFixtures;
+  defaultOpen: boolean;
+  playersById?: Map<number, UiPlayer>;
+  lineupForRound?: (round: number) => Xi | null;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const range =
     round.startDate && round.endDate ? `${shortDate(round.startDate)} – ${shortDate(round.endDate)}` : "";
+  const myXi = lineupForRound(round.round);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
@@ -41,7 +56,7 @@ export function RoundSection({ round, defaultOpen }: { round: RoundFixtures; def
                 </h3>
                 <div className="flex flex-col gap-1.5">
                   {matches.map((m) => (
-                    <MatchRow key={m.id} match={m} />
+                    <MatchRow key={m.id} match={m} playersById={playersById} myXi={myXi} />
                   ))}
                 </div>
               </div>
