@@ -1,16 +1,17 @@
 "use client";
 import Link from "next/link";
 import type { Route } from "next";
-import { IconHome2, IconTrophy, IconChartBar, IconSparkle2, IconUser } from "@tabler/icons-react";
+import { IconHome2, IconTrophy, IconChartBar, IconSparkle2, IconUser, IconBallFootball } from "@tabler/icons-react";
 import { Wordmark } from "./Wordmark";
 import { ConnectedWalletPill } from "@/components/ConnectedWalletPill";
 
-export type NavKey = "home" | "tournaments" | "ranking" | "coach" | "profile";
+export type NavKey = "home" | "tournaments" | "ranking" | "coach" | "profile" | "fixtures";
 
 const ITEMS: { key: NavKey; href: Route; label: string; Icon: typeof IconHome2 }[] = [
   { key: "home", href: "/play" as Route, label: "Home", Icon: IconHome2 },
   { key: "tournaments", href: "/tournaments" as Route, label: "Tournaments", Icon: IconTrophy },
   { key: "ranking", href: "/leaderboard" as Route, label: "Ranking", Icon: IconChartBar },
+  { key: "fixtures", href: "/fixtures" as Route, label: "Fixtures", Icon: IconBallFootball },
   { key: "coach", href: "/coach" as Route, label: "Coach", Icon: IconSparkle2 },
   { key: "profile", href: "/profile" as Route, label: "Profile", Icon: IconUser },
 ];
