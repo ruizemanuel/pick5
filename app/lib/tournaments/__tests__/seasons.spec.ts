@@ -9,6 +9,7 @@ import {
   isConfiguredRound,
   phaseRounds,
   seasonProvider,
+  tidForRound,
   type Season,
 } from "../seasons";
 
@@ -68,5 +69,20 @@ describe("seasonProvider", () => {
   it("returns the season's provider, defaulting to fpl", () => {
     expect(seasonProvider({ seasonId: 1, label: "x", fechas: [] })).toBe("fpl");
     expect(seasonProvider({ seasonId: 1, label: "x", provider: "fifa-wc", fechas: [] })).toBe("fifa-wc");
+  });
+});
+
+describe("tidForRound", () => {
+  it("maps group rounds (1-3) to tournamentId 0", () => {
+    expect(tidForRound(1)).toBe(0);
+    expect(tidForRound(2)).toBe(0);
+    expect(tidForRound(3)).toBe(0);
+  });
+  it("maps knockout rounds (4-8) to tournamentId 1", () => {
+    expect(tidForRound(4)).toBe(1);
+    expect(tidForRound(8)).toBe(1);
+  });
+  it("returns undefined for an unconfigured round", () => {
+    expect(tidForRound(99)).toBeUndefined();
   });
 });

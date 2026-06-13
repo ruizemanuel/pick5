@@ -142,3 +142,13 @@ export function priorPhaseTid(season: Season, tournamentId: number): number | un
   const idx = season.fechas.findIndex((f) => f.tournamentId === tournamentId);
   return idx > 0 ? season.fechas[idx - 1].tournamentId : undefined;
 }
+
+/** The tournamentId of the phase whose rounds include `round` (group rounds 1-3 -> 0,
+ * knockout 4-8 -> 1), or undefined if no configured phase covers it. */
+export function tidForRound(round: number): number | undefined {
+  for (const s of SEASONS) {
+    const f = s.fechas.find((x) => (x.rounds ?? [x.round]).includes(round));
+    if (f) return f.tournamentId;
+  }
+  return undefined;
+}
